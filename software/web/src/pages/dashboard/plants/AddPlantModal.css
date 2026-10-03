@@ -1,0 +1,80 @@
+.add-plant-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 38, 28, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+.add-plant-modal {
+  background: #fff;
+  color: #1f3b2d;
+  border-radius: 18px;
+  width: 380px;
+  max-width: 100%;
+  padding: 22px 24px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.add-plant-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.add-plant-head h2 { margin: 0; font-size: 18px; font-weight: 500; color: #1f3b2d; }
+.add-plant-head p { margin: 2px 0 0; font-size: 12px; color: #5e7266; }
+.add-plant-x {
+  border: none;
+  background: #f4f7f0;
+  color: #1f3b2d;
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.add-plant-field { margin-bottom: 12px; }
+.add-plant-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1f3b2d;
+  margin-bottom: 5px;
+}
+.add-plant-field input,
+.add-plant-field select {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #d5ded0;
+  border-radius: 10px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  color: #1f3b2d;
+  background: #fff;
+  outline: none;
+}
+.add-plant-field input::placeholder { color: #8a958d; }
+.add-plant-field input:focus,
+.add-plant-field select:focus {
+  border-color: #3f7a55;
+  box-shadow: 0 0 0 3px #e3efe7;
+}
+.add-plant-duration { display: grid; grid-template-columns: 90px 1fr; gap: 8px; }
+.add-plant-error { margin: 0 0 4px; font-size: 12px; color: #9a3f1f; }
+.add-plant-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.add-plant-cancel,
+.add-plant-done {
+  border-radius: 10px;
+  padding: 9px 16px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.add-plant-cancel { border: 1px solid #d5ded0; background: #fff; color: #1f3b2d; }
+.add-plant-done { border: none; background: #253b2f; color: #fff; }
+.add-plant-done:hover { background: #1a2c22; }
