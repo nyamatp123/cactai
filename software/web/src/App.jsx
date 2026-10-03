@@ -1,8 +1,8 @@
-import SettingsPage from './pages/settings/SettingsPage.jsx'
+import DashboardPage from './pages/dashboard/DashboardPage.jsx'
 
-// TODO: replace with real routing once the dashboard exists.
+// TODO: replace with real routing once login/settings/dashboard are linked up.
 function App() {
-  return <SettingsPage />
+  return <DashboardPage />
 }
 
 export default App

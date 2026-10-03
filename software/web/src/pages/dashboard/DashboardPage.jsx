@@ -1,16 +1,23 @@
 import { useState } from "react";
-import useSettings from "../../hooks/useSettings";
 import Sidebar from "./Sidebar";
+import AddPlantModal from "./plants/AddPlantModal";
+import PlantView from "./plants/PlantView";
 import "./Dashboard.css";
 
-export default function DashboardPage() {
-  // TODO: swap useSettings for a dashboard-owned plants hook once the API exists.
-  const { plants, addPlant } = useSettings();
-  const [selectedId, setSelectedId] = useState(plants[0]?.id ?? null);
+const initialPlants = [];
 
-  async function handleAddPlant() {
-    const plant = await addPlant();
+export default function DashboardPage() {
+  const [plants, setPlants] = useState(initialPlants);
+  const [selectedId, setSelectedId] = useState(initialPlants[0]?.id);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+
+  const selected = plants.find((p) => p.id === selectedId);
+
+  function handleAddPlant(data) {
+    const plant = { id: crypto.randomUUID(), ...data, readings: null };
+    setPlants((prev) => [...prev, plant]);
     setSelectedId(plant.id);
+    setIsAddOpen(false);
   }
 
   return (
@@ -19,11 +26,19 @@ export default function DashboardPage() {
         plants={plants}
         selectedId={selectedId}
         onSelect={setSelectedId}
-        onAddPlant={handleAddPlant}
+        onAddPlant={() => setIsAddOpen(true)}
       />
 
-      {/* Intentionally empty — panels land here next. */}
-      <main className="dash-main" />
+      <main className="dash-main">
+        {selected && <PlantView plant={selected} />}
+      </main>
+
+      {isAddOpen && (
+        <AddPlantModal
+          onClose={() => setIsAddOpen(false)}
+          onSubmit={handleAddPlant}
+        />
+      )}
     </div>
   );
 }

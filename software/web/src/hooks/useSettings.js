@@ -43,6 +43,23 @@ export default function useSettings() {
     setUser((prev) => ({ ...prev, theme }));
   }
 
+  async function addPlant(details = {}) {
+    // TODO: POST /api/plants with details, then use the id the server returns
+    const plant = {
+      id: Date.now(),
+      name: details.name ?? "New plant",
+      species: details.species ?? "Cactus",
+      kind: details.kind ?? "cactus",
+      sensor: null,
+      online: false,
+      alertsOn: true,
+      thirstLine: 15,
+      ...details,
+    };
+    setPlants((prev) => [...prev, plant]);
+    return plant;
+  }
+
   async function updatePlant(id, changes) {
     // TODO: PATCH /api/plants/:id with changes
     setPlants((prev) => prev.map((p) => (p.id === id ? { ...p, ...changes } : p)));
@@ -53,5 +70,5 @@ export default function useSettings() {
     console.log("TODO: change password", { length: newPassword.length });
   }
 
-  return { user, plants, updateProfile, updateTheme, updatePlant, changePassword };
+  return { user, plants, updateProfile, updateTheme, addPlant, updatePlant, changePassword };
 }
