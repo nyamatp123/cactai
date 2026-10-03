@@ -141,3 +141,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# VS Temp files
+.vs/
+
+# Python cache
+__pycache__/
+*.pyc
