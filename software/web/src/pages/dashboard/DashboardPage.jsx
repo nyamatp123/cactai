@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Sidebar from "./Sidebar";
+import StatCards from "./StatCards";
 import MoistureChart from "./MoistureChart";
 import LightChart from "./LightChart";
 import AddPlantModal from "./plants/AddPlantModal";
 import PlantView from "./plants/PlantView";
+import { getStatReadings } from "../../utils/parseReadings";
 import "./Dashboard.css";
 
 const RANGES = ['Day', 'Week', 'Month'];
@@ -40,6 +42,7 @@ export default function DashboardPage() {
   const [timeRange, setTimeRange] = useState('day');
 
   const selected = plants.find((p) => p.id === selectedId);
+  const statReadings = useMemo(() => getStatReadings(), []);
 
   function handleAddPlant(data) {
     const plant = { id: crypto.randomUUID(), ...data, readings: null };
@@ -66,6 +69,7 @@ export default function DashboardPage() {
           <TimeRangeToggle value={timeRange} onChange={setTimeRange} />
         </div>
 
+        <StatCards readings={statReadings} onWaterNow={() => { /* TODO: wire to backend */ }} />
         <MoistureChart timeRange={timeRange} />
         <LightChart timeRange={timeRange} />
 

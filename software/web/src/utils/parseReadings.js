@@ -53,6 +53,28 @@ function getKeyFns(range) {
   return [calDayKey, ts => `${MONTH_NAMES[ts.getMonth()]} ${ts.getDate()}`];
 }
 
+function calDayKeyStr(ts) {
+  return `${ts.getFullYear()}-${ts.getMonth()}-${ts.getDate()}`;
+}
+
+function avgArr(arr) {
+  if (!arr.length) return 0;
+  return arr.reduce((s, v) => s + v, 0) / arr.length;
+}
+
+export function getStatReadings() {
+  if (!allRows.length) return null;
+  const latest = allRows[allRows.length - 1];
+  const todayKey = calDayKeyStr(latest.ts);
+  const todayRows = allRows.filter(r => calDayKeyStr(r.ts) === todayKey);
+  return {
+    latestMoisture: latest.moisture,
+    latestLux: latest.lux,
+    avgMoisture: Math.round(avgArr(todayRows.map(r => r.moisture)) * 10) / 10,
+    avgLux: Math.round(avgArr(todayRows.map(r => r.lux))),
+  };
+}
+
 export function getMoistureData(range) {
   const [getKey, getLabel] = getKeyFns(range);
   return bucket(sliceRows(range), getKey, getLabel, 'moisture');
