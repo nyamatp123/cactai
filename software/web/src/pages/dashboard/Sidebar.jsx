@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import CactaiLogo from "./CactaiLogo";
 import { getPlantIcon } from "./plantIcons";
 import { PlusIcon, SettingsIcon } from "./uiIcons";
@@ -38,11 +39,10 @@ export default function Sidebar({ plants, selectedId, onSelect, onAddPlant }) {
         </button>
       </nav>
 
-      {/* TODO: link to the settings route once routing exists */}
-      <button type="button" className="dash-rail-button dash-settings" title="Settings">
+      <Link to="/settings" className="dash-rail-button dash-settings" title="Settings">
         <SettingsIcon />
         <span className="dash-tooltip">Settings</span>
-      </button>
+      </Link>
     </aside>
   );
 }

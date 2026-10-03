@@ -34,6 +34,8 @@ const NAV_ITEMS = [
   },
 ];
 
+import { Link } from "react-router-dom";
+
 function formatMemberSince(dateString) {
   const date = new Date(dateString);
   return date.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -44,10 +46,9 @@ export default function SettingsSidebar({ user, active, onSelect }) {
 
   return (
     <aside className="settings-sidebar">
-      {/* TODO: point to the real dashboard route */}
-      <a href="#" className="back-link">
+      <Link to="/dashboard" className="back-link">
         <span aria-hidden="true">←</span> Back to dashboard
-      </a>
+      </Link>
 
       <div className="profile">
         <span className="avatar" aria-hidden="true">

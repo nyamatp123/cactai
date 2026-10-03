@@ -1,8 +1,35 @@
 import { useState } from "react";
 import Sidebar from "./Sidebar";
+import MoistureChart from "./MoistureChart";
+import LightChart from "./LightChart";
 import AddPlantModal from "./plants/AddPlantModal";
 import PlantView from "./plants/PlantView";
 import "./Dashboard.css";
+
+const RANGES = ['Day', 'Week', 'Month'];
+
+function TimeRangeToggle({ value, onChange }) {
+  const idx = RANGES.findIndex(r => r.toLowerCase() === value);
+  return (
+    <div className="time-toggle" role="group" aria-label="Time range">
+      <div
+        className="time-toggle-pill"
+        style={{ transform: `translateX(${idx * 100}%)` }}
+        aria-hidden="true"
+      />
+      {RANGES.map(r => (
+        <button
+          key={r}
+          type="button"
+          className={`time-toggle-option${value === r.toLowerCase() ? ' is-active' : ''}`}
+          onClick={() => onChange(r.toLowerCase())}
+        >
+          {r}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 const initialPlants = [];
 
@@ -10,6 +37,7 @@ export default function DashboardPage() {
   const [plants, setPlants] = useState(initialPlants);
   const [selectedId, setSelectedId] = useState(initialPlants[0]?.id);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [timeRange, setTimeRange] = useState('day');
 
   const selected = plants.find((p) => p.id === selectedId);
 
@@ -30,6 +58,17 @@ export default function DashboardPage() {
       />
 
       <main className="dash-main">
+        <div className="dash-header">
+          <div className="dash-greeting">
+            <h1>Hi, {selected?.name ?? 'Plant Buddy'}</h1>
+            <p>Updated just now</p>
+          </div>
+          <TimeRangeToggle value={timeRange} onChange={setTimeRange} />
+        </div>
+
+        <MoistureChart timeRange={timeRange} />
+        <LightChart timeRange={timeRange} />
+
         {selected && <PlantView plant={selected} />}
       </main>
 
