@@ -376,4 +376,148 @@
   color: #1f3329;
 }
 
+/* ---------- Plant panel ---------- */
+.plant-panel {
+  flex: 0 0 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* top padding matches dash-main (24px) + header height (~58px) + header margin (20px) */
+  padding: 102px 16px 16px 0;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+.pp-card {
+  background: #fff;
+  border-radius: 16px;
+}
+
+/* Plant card */
+.pp-plant-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  text-align: center;
+}
+
+.pp-plant-name {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f3329;
+}
+
+.pp-plant-mood {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #5e7266;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Details card */
+.pp-details-card {
+  padding: 14px 16px;
+}
+
+.pp-details-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f3329;
+}
+
+.pp-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.pp-detail-label {
+  font-size: 13px;
+  color: #5e7266;
+}
+
+.pp-detail-value {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Tip card */
+.pp-tip-card {
+  background: #253B2F;
+  padding: 10px 12px;
+}
+
+.pp-tip-heading {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.pp-tip-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #DCE9D5;
+}
+
+/* Ask Cactai button */
+.pp-ask-btn {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  border: 1.5px solid #3F7A55;
+  border-radius: 18px;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.15s;
+  color: #1f3b2d;
+}
+
+.pp-ask-btn:hover {
+  background: #F4F7F0;
+}
+
+.pp-ask-btn:focus-visible {
+  outline: 2px solid #3F7A55;
+  outline-offset: 2px;
+}
+
+.pp-ask-icon {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #253B2F;
+}
+
+.pp-ask-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pp-ask-primary {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1F3B2D;
+}
+
+.pp-ask-secondary {
+  font-size: 11px;
+  color: #5E7266;
+}
 

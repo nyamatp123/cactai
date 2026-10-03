@@ -5,6 +5,7 @@ import MoistureChart from "./MoistureChart";
 import LightChart from "./LightChart";
 import AddPlantModal from "./plants/AddPlantModal";
 import PlantView from "./plants/PlantView";
+import PlantPanel from "./PlantPanel";
 import { getStatReadings } from "../../utils/parseReadings";
 import "./Dashboard.css";
 
@@ -75,6 +76,12 @@ export default function DashboardPage() {
 
         {selected && <PlantView plant={selected} />}
       </main>
+
+      <PlantPanel
+        plant={selected}
+        readings={statReadings}
+        onAskCactai={() => { /* TODO: chat panel not built yet */ }}
+      />
 
       {isAddOpen && (
         <AddPlantModal

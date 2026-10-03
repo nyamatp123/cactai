@@ -1,9 +1,6 @@
-// Not used for card logic anymore — kept for reference / MoistureChart
-const THIRST_LINE = 15;
-const LIGHT_BRIGHT = 2500;
-const LIGHT_MEDIUM = 1000;
+import { lightLabel } from './plantStatus';
 
-// Moisture bands for a cactus — see spec for rationale
+// Moisture bands for a cactus
 const MOISTURE_BANDS = [
   { max: 20,  label: 'Needs water',  bg: '#F8E3D8', arc: '#C4572F', track: '#F0CBB9', showWater: true  },
   { max: 40,  label: 'Healthy zone', bg: '#FEF9C3', arc: '#C9A217', track: '#EDE7A0', showWater: false },
@@ -17,12 +14,6 @@ function getMoistureBand(pct) {
   return MOISTURE_BANDS.find(b => pct < b.max) ?? MOISTURE_BANDS[MOISTURE_BANDS.length - 1];
 }
 
-function lightLevel(lux) {
-  if (lux == null) return '—';
-  if (lux > LIGHT_BRIGHT) return 'Bright';
-  if (lux > LIGHT_MEDIUM) return 'Medium';
-  return 'Low';
-}
 
 function MoistureRing({ pct, arcColor, trackColor }) {
   const R = 38;
@@ -82,7 +73,7 @@ export default function StatCards({ readings, onWaterNow }) {
   const avgLux = hasData ? readings.avgLux : null;
 
   const band = getMoistureBand(moisture);
-  const level = lightLevel(lux);
+  const level = lightLabel(lux);
 
   return (
     <div className="stat-cards-row">
