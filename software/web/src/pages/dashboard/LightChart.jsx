@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis,
-  Tooltip, ResponsiveContainer, Cell,
+  BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
 } from 'recharts';
 import { getLightData } from '../../utils/parseReadings';
 
 const LABEL = { day: 'Light across the day', week: 'Light across the week', month: 'Light across the month' };
+const POINT_WIDTH = 60;
 
 function barColor(lux) {
   if (lux > 300) return '#c8960a';
@@ -16,20 +16,21 @@ function barColor(lux) {
 
 export default function LightChart({ timeRange = 'day' }) {
   const data = useMemo(() => getLightData(timeRange), [timeRange]);
+  const chartWidth = data.length * POINT_WIDTH;
 
   return (
     <div className="chart-card">
       <div className="chart-card-header">
         <span className="chart-card-title">{LABEL[timeRange]}</span>
       </div>
-      <ResponsiveContainer width="100%" height={180}>
-        <BarChart data={data} margin={{ top: 10, right: 16, bottom: 0, left: -20 }}>
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <BarChart width={chartWidth} height={180} data={data} margin={{ top: 10, right: 16, bottom: 0, left: -20 }}>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11, fill: '#7a8f82' }}
             tickLine={false}
             axisLine={false}
-            interval="preserveStartEnd"
+            interval={0}
           />
           <YAxis
             tick={{ fontSize: 11, fill: '#7a8f82' }}
@@ -53,7 +54,7 @@ export default function LightChart({ timeRange = 'day' }) {
             ))}
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
+      </div>
     </div>
   );
 }
