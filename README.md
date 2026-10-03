@@ -20,5 +20,6 @@ Packages used:
 ```bash
 cd web
 npm install
+npm install recharts
 ```
  
