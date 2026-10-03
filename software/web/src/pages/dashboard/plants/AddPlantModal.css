@@ -12,8 +12,10 @@
   background: #fff;
   color: #1f3b2d;
   border-radius: 18px;
-  width: 380px;
+  width: 420px;
   max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
   padding: 22px 24px;
   font-family: system-ui, -apple-system, sans-serif;
 }
@@ -21,10 +23,10 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
-.add-plant-head h2 { margin: 0; font-size: 18px; font-weight: 500; color: #1f3b2d; }
-.add-plant-head p { margin: 2px 0 0; font-size: 12px; color: #5e7266; }
+.add-plant-head h2 { margin: 0; font-size: 18px; font-weight: 600; color: #1f3b2d; }
+.add-plant-head p  { margin: 3px 0 0; font-size: 12px; color: #5e7266; }
 .add-plant-x {
   border: none;
   background: #f4f7f0;
@@ -35,14 +37,45 @@
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
+  flex-shrink: 0;
 }
+
+/* Section labels */
+.add-plant-section-label {
+  margin: 18px 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7a9085;
+}
+.add-plant-section-label:first-of-type { margin-top: 0; }
+
+/* Fields */
 .add-plant-field { margin-bottom: 12px; }
 .add-plant-field label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 500;
   color: #1f3b2d;
   margin-bottom: 5px;
+}
+.add-plant-required {
+  font-size: 10px;
+  font-weight: 500;
+  color: #fff;
+  background: #3f7a55;
+  padding: 1px 6px;
+  border-radius: 20px;
+  letter-spacing: 0.03em;
+}
+.add-plant-hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: #8a9e92;
+  line-height: 1.4;
 }
 .add-plant-field input,
 .add-plant-field select {
@@ -56,6 +89,7 @@
   color: #1f3b2d;
   background: #fff;
   outline: none;
+  box-sizing: border-box;
 }
 .add-plant-field input::placeholder { color: #8a958d; }
 .add-plant-field input:focus,
@@ -63,18 +97,76 @@
   border-color: #3f7a55;
   box-shadow: 0 0 0 3px #e3efe7;
 }
+
+/* Duration row */
 .add-plant-duration { display: grid; grid-template-columns: 90px 1fr; gap: 8px; }
-.add-plant-error { margin: 0 0 4px; font-size: 12px; color: #9a3f1f; }
-.add-plant-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+/* Drainage toggle */
+.add-plant-toggle-row { display: flex; gap: 8px; }
+.add-plant-toggle {
+  flex: 1;
+  height: 36px;
+  border: 1px solid #d5ded0;
+  border-radius: 10px;
+  background: #fff;
+  color: #5e7266;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.add-plant-toggle.is-active {
+  background: #253b2f;
+  color: #fff;
+  border-color: #253b2f;
+}
+
+/* Advanced toggle */
+.add-plant-advanced-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin: 14px 0 0;
+  padding: 9px 12px;
+  background: #f4f7f0;
+  border: 1px solid #e0e8dc;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: #3f7a55;
+  cursor: pointer;
+  text-align: left;
+}
+.add-plant-chevron { font-size: 10px; color: #7a9085; }
+.add-plant-advanced {
+  margin-top: 10px;
+  padding: 14px;
+  background: #f9fbf8;
+  border: 1px solid #e0e8dc;
+  border-radius: 12px;
+}
+.add-plant-range-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+.add-plant-range-grid .add-plant-field { margin-bottom: 8px; }
+
+/* Error / footer */
+.add-plant-error { margin: 8px 0 0; font-size: 12px; color: #9a3f1f; }
+.add-plant-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 .add-plant-cancel,
 .add-plant-done {
   border-radius: 10px;
-  padding: 9px 16px;
+  padding: 9px 18px;
   font: inherit;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
 }
 .add-plant-cancel { border: 1px solid #d5ded0; background: #fff; color: #1f3b2d; }
-.add-plant-done { border: none; background: #253b2f; color: #fff; }
+.add-plant-done   { border: none; background: #253b2f; color: #fff; }
 .add-plant-done:hover { background: #1a2c22; }

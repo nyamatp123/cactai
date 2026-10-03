@@ -1,8 +1,4 @@
-
 import { timeWithYou } from "./plantTime";
-import StatCards from "../StatCards";
-import MoistureChart from "../MoistureChart";
-import LightChart from "../LightChart";
 
 export default function PlantView({ plant }) {
   const hasData = Boolean(plant.readings);
@@ -22,13 +18,7 @@ export default function PlantView({ plant }) {
         </span>
       </header>
 
-      {hasData ? (
-        <>
-          <StatCards readings={plant.readings} />
-          <MoistureChart data={plant.readings.moistureSeries} />
-          <LightChart data={plant.readings.lightSeries} />
-        </>
-      ) : (
+      {!hasData && (
         <div className="plant-empty">
           <div>
             <strong>Connect a sensor to start tracking {plant.name}</strong>
