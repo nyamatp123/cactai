@@ -1,9 +1,9 @@
 export function Blob() {
   return (
-    <svg className="login__blob" viewBox="0 0 600 1000" preserveAspectRatio="xMaxYMid slice">
+    <svg className="login__blob" viewBox="0 0 600 1000" preserveAspectRatio="xMinYMid slice">
       <path
         fill="#d7e8d0"
-        d="M600 0H190C160 120 230 225 330 262C190 335 115 455 138 565C160 660 228 700 262 722C130 795 62 900 42 1000H600Z"
+        d="M600 0H210C180 120 250 225 350 262C215 335 145 455 165 565C185 660 250 700 285 722C160 795 100 900 85 1000H600Z"
       />
     </svg>
   );
