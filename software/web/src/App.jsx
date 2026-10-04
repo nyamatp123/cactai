@@ -5,6 +5,7 @@ import ForgotPasswordPage from "./pages/auth/ForgetPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import DashboardPage from "./pages/dashboard/DashboardPage.jsx";
 import SettingsPage from "./pages/settings/SettingsPage.jsx";
+import WelcomePage from "./pages/onboarding/WelcomePage.jsx";
 import ProtectedRoute from "./pages/auth/ProtectedRoute";
 import PublicOnlyRoute from "./pages/auth/PublicOnlyRoute.jsx";
 
@@ -25,7 +26,9 @@ export default function App() {
 
             {/* need a valid login */}
             <Route element={<ProtectedRoute />}>
+                <Route path="/welcome" element={<WelcomePage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/dashboard/:plantId" element={<DashboardPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
             </Route>
 

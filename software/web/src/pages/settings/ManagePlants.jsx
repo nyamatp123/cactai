@@ -15,14 +15,22 @@ const CACTUS_ICON = (
   </svg>
 );
 
-export default function ManagePlants({ plants, onAddPlant, onDeletePlant }) {
+export default function ManagePlants({ plants, onAddPlant, onUpdatePlant, onDeletePlant }) {
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingPlant, setEditingPlant] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState("");
+  // The dashboard needs a plant, so the last one can't be deleted
+  const isLastPlant = plants.length <= 1;
 
   async function handleAdd(data) {
     await onAddPlant(data); // throws on failure; the modal shows the error
     setIsAddOpen(false);
+  }
+
+  async function handleEdit(data) {
+    await onUpdatePlant(editingPlant.id, data); // throws on failure; the modal shows the error
+    setEditingPlant(null);
   }
 
   async function handleDelete(plant) {
@@ -103,17 +111,15 @@ export default function ManagePlants({ plants, onAddPlant, onDeletePlant }) {
                 <button
                   type="button"
                   className="text-link"
-                  onClick={() => {
-                    // TODO: let the user set a new thirst line, then PATCH /api/plants/:id
-                    console.log("TODO: edit thirst line", plant.id);
-                  }}
+                  onClick={() => setEditingPlant(plant)}
                 >
                   Edit
                 </button>
                 <button
                   type="button"
                   className="text-link is-danger"
-                  disabled={deletingId === plant.id}
+                  disabled={isLastPlant || deletingId === plant.id}
+                  title={isLastPlant ? "You need at least one plant" : undefined}
                   onClick={() => handleDelete(plant)}
                 >
                   {deletingId === plant.id ? "Deleting…" : "Delete"}
@@ -124,11 +130,29 @@ export default function ManagePlants({ plants, onAddPlant, onDeletePlant }) {
         })}
       </ul>
 
+      {isLastPlant && plants.length > 0 && (
+        <p className="plant-note">
+          You need at least one plant for your dashboard. To remove everything, delete your account.
+        </p>
+      )}
+
       <button type="button" className="add-another" onClick={() => setIsAddOpen(true)}>
         <span aria-hidden="true">+</span> Add another plant
       </button>
 
       {isAddOpen && <AddPlantModal onClose={() => setIsAddOpen(false)} onSubmit={handleAdd} />}
+
+      {editingPlant && (
+        <AddPlantModal
+          key={editingPlant.id}
+          initialPlant={editingPlant}
+          title={`Edit ${editingPlant.name}`}
+          subtitle="Update your plant's details."
+          submitLabel="Save"
+          onClose={() => setEditingPlant(null)}
+          onSubmit={handleEdit}
+        />
+      )}
     </>
   );
 }

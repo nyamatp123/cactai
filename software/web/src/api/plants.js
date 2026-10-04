@@ -43,6 +43,21 @@ export async function listPlants() {
   return plants.map(fromApi);
 }
 
+export async function updatePlant(id, data) {
+  const plant = await request(`/plants/${id}`, {
+    method: "PATCH",
+    body: {
+      name: data.name,
+      species: data.type,
+      device_id: data.deviceId,
+      location: data.location,
+      drainage: data.drainage,
+      acquired_at: data.acquiredAt,
+    },
+  });
+  return fromApi(plant);
+}
+
 export function deletePlant(id) {
   return request(`/plants/${id}`, { method: "DELETE" });
 }

@@ -150,16 +150,55 @@ def list_plants(user_id: int = Depends(get_current_user_id)):
         ).fetchall()
     return [plant_row(r) for r in rows]
 
-# Readings for the plant are removed too (ON DELETE CASCADE)
+class PlantChanges(BaseModel):
+    name: str | None = None
+    species: str | None = None
+    device_id: str | None = None
+    location: str | None = None
+    drainage: bool | None = None
+    acquired_at: datetime | None = None
+
+# Only the fields sent are changed; keys come from the model, so they're safe to put in SQL
+@app.patch("/plants/{plant_id}")
+def update_plant(plant_id: int, changes: PlantChanges, user_id: int = Depends(get_current_user_id)):
+    fields = changes.model_dump(exclude_unset=True)
+    if "name" in fields and not (fields["name"] or "").strip():
+        raise HTTPException(status_code=422, detail="Name can't be empty")
+
+    try:
+        with get_connection() as conn:
+            if fields:
+                set_clause = ", ".join(f"{col} = %s" for col in fields)
+                row = conn.execute(
+                    f"UPDATE plants SET {set_clause} WHERE id = %s AND user_id = %s "
+                    f"RETURNING {PLANT_COLUMNS}",
+                    (*fields.values(), plant_id, user_id),
+                ).fetchone()
+            else:
+                row = conn.execute(
+                    f"SELECT {PLANT_COLUMNS} FROM plants WHERE id = %s AND user_id = %s",
+                    (plant_id, user_id),
+                ).fetchone()
+    except psycopg.errors.UniqueViolation:
+        raise HTTPException(status_code=409, detail="That device is already paired to a plant")
+    if row is None:
+        raise HTTPException(status_code=404, detail="Plant not found")
+    return plant_row(row)
+
+# Readings for the plant are removed too (ON DELETE CASCADE).
+# A user must keep at least one plant; removing everything means deleting the account.
 @app.delete("/plants/{plant_id}", status_code=204)
 def delete_plant(plant_id: int, user_id: int = Depends(get_current_user_id)):
     with get_connection() as conn:
-        row = conn.execute(
-            "DELETE FROM plants WHERE id = %s AND user_id = %s RETURNING id",
-            (plant_id, user_id),
-        ).fetchone()
-    if row is None:
-        raise HTTPException(status_code=404, detail="Plant not found")
+        # Lock the user's plants so two deletes at once can't remove the last two
+        owned = conn.execute(
+            "SELECT id FROM plants WHERE user_id = %s FOR UPDATE", (user_id,)
+        ).fetchall()
+        if plant_id not in {r[0] for r in owned}:
+            raise HTTPException(status_code=404, detail="Plant not found")
+        if len(owned) <= 1:
+            raise HTTPException(status_code=409, detail="You need at least one plant")
+        conn.execute("DELETE FROM plants WHERE id = %s", (plant_id,))
 
 # ---------- Cactai chat (Gemini) ----------
 # Route lives in chat_routes.py; requires login like the routes above

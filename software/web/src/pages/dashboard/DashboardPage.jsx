@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { listPlants, createPlant } from "../../api/plants";
 import Sidebar from "./Sidebar";
 import StatCards from "./StatCards";
@@ -35,11 +36,13 @@ function TimeRangeToggle({ value, onChange }) {
   );
 }
 
-const initialPlants = [];
-
+// Route: /dashboard/:plantId. /dashboard alone opens the first plant,
+// and users with no plants are sent to /welcome to add one.
 export default function DashboardPage() {
-  const [plants, setPlants] = useState(initialPlants);
-  const [selectedId, setSelectedId] = useState(initialPlants[0]?.id);
+  const { plantId } = useParams();
+  const navigate = useNavigate();
+  const [plants, setPlants] = useState(null); // null while loading
+  const [loadError, setLoadError] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [timeRange, setTimeRange] = useState('day');
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -48,18 +51,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     listPlants()
-      .then((list) => {
-        setPlants(list);
-        setSelectedId((id) => id ?? list[0]?.id);
-      })
-      .catch((err) => console.error("Failed to load plants:", err));
+      .then(setPlants)
+      .catch((err) => setLoadError(err.message));
   }, []);
 
-  const selected = plants.find((p) => p.id === selectedId);
+  const selected = plants?.find((p) => String(p.id) === plantId);
+  const selectedId = selected?.id;
   const statReadings = useMemo(() => getStatReadings(), []);
 
-  // Chat still works before any plant is added
-  const chatKey = selectedId ?? '__no-plant__';
+  const chatKey = selectedId;
   const chatMessages = chatHistory.get(chatKey) ?? [];
 
   function handleAddMessage(msg) {
@@ -75,23 +75,29 @@ export default function DashboardPage() {
   async function handleAddPlant(data) {
     const plant = await createPlant(data);
     setPlants((prev) => [...prev, plant]);
-    setSelectedId(plant.id);
     setIsAddOpen(false);
+    navigate(`/dashboard/${plant.id}`);
   }
+
+  if (loadError) return <p style={{ padding: 24 }}>{loadError}</p>;
+  if (plants === null) return null; // loading
+  if (plants.length === 0) return <Navigate to="/welcome" replace />;
+  // No plant in the URL, or one that isn't yours: open the first plant
+  if (!selected) return <Navigate to={`/dashboard/${plants[0].id}`} replace />;
 
   return (
     <div className={`dashboard-page${isChatOpen ? ' chat-open' : ''}`}>
       <Sidebar
         plants={plants}
         selectedId={selectedId}
-        onSelect={setSelectedId}
+        onSelect={(id) => navigate(`/dashboard/${id}`)}
         onAddPlant={() => setIsAddOpen(true)}
       />
 
       <main className="dash-main">
         <div className="dash-header">
           <div className="dash-greeting">
-            <h1>Hi, {selected?.name ?? 'Plant Buddy'}</h1>
+            <h1>Hi, {selected.name}</h1>
             <p>Updated just now</p>
           </div>
           <TimeRangeToggle value={timeRange} onChange={setTimeRange} />
@@ -101,7 +107,7 @@ export default function DashboardPage() {
         <MoistureChart timeRange={timeRange} />
         <LightChart timeRange={timeRange} />
 
-        {selected && <PlantView plant={selected} />}
+        <PlantView plant={selected} />
       </main>
 
       <PlantPanel

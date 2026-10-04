@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { acquiredDateFrom } from "./plantTime";
+import { acquiredDateFrom, durationFrom } from "./plantTime";
 import "./AddPlantModal.css";
 
 const CACTUS_TYPES = [
@@ -17,14 +17,24 @@ const LOCATIONS = [
   "Greenhouse",
 ];
 
-export default function AddPlantModal({ onClose, onSubmit }) {
-  const [name, setName] = useState("");
-  const [type, setType] = useState("");
-  const [amount, setAmount] = useState("3");
-  const [unit, setUnit] = useState("months");
-  const [deviceId, setDeviceId] = useState("");
-  const [location, setLocation] = useState("");
-  const [drainage, setDrainage] = useState(null); // true | false | null
+// Without onClose the modal can't be dismissed (used for the required first plant).
+// Pass initialPlant to edit an existing plant instead of adding one.
+export default function AddPlantModal({
+  onClose,
+  onSubmit,
+  initialPlant = null,
+  title = "Add a cactus",
+  subtitle = "Tell Cactai about your plant.",
+  submitLabel = "Done",
+}) {
+  const initialDuration = durationFrom(initialPlant?.acquiredAt);
+  const [name, setName] = useState(initialPlant?.name ?? "");
+  const [type, setType] = useState(initialPlant?.type ?? "");
+  const [amount, setAmount] = useState(initialDuration.amount);
+  const [unit, setUnit] = useState(initialDuration.unit);
+  const [deviceId, setDeviceId] = useState(initialPlant?.deviceId ?? "");
+  const [location, setLocation] = useState(initialPlant?.location ?? "");
+  const [drainage, setDrainage] = useState(initialPlant?.drainage ?? null); // true | false | null
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const nameRef = useRef(null);
@@ -32,6 +42,7 @@ export default function AddPlantModal({ onClose, onSubmit }) {
   useEffect(() => { nameRef.current?.focus(); }, []);
 
   useEffect(() => {
+    if (!onClose) return;
     function onKey(e) { if (e.key === "Escape") onClose(); }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -46,13 +57,16 @@ export default function AddPlantModal({ onClose, onSubmit }) {
       return;
     }
     const n = Math.max(0, parseInt(amount, 10) || 0);
+    // When editing, keep the exact saved date unless the duration was changed
+    const durationUnchanged =
+      initialPlant && amount === initialDuration.amount && unit === initialDuration.unit;
     setError("");
     setSaving(true);
     try {
       await onSubmit({
         name: trimmedName,
         type: trimmedType,
-        acquiredAt: acquiredDateFrom(n, unit),
+        acquiredAt: durationUnchanged ? initialPlant.acquiredAt : acquiredDateFrom(n, unit),
         deviceId: deviceId.trim() || null, // optional for now
         location: location || null,
         drainage,
@@ -66,7 +80,7 @@ export default function AddPlantModal({ onClose, onSubmit }) {
   return (
     <div
       className="add-plant-overlay"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => { if (onClose && e.target === e.currentTarget) onClose(); }}
     >
       <form
         className="add-plant-modal"
@@ -77,12 +91,14 @@ export default function AddPlantModal({ onClose, onSubmit }) {
       >
         <div className="add-plant-head">
           <div>
-            <h2 id="add-plant-title">Add a cactus</h2>
-            <p>Tell Cactai about your plant.</p>
+            <h2 id="add-plant-title">{title}</h2>
+            <p>{subtitle}</p>
           </div>
-          <button type="button" className="add-plant-x" onClick={onClose} aria-label="Close">
-            &times;
-          </button>
+          {onClose && (
+            <button type="button" className="add-plant-x" onClick={onClose} aria-label="Close">
+              &times;
+            </button>
+          )}
         </div>
 
         {/* ── Section: About ── */}
@@ -185,9 +201,11 @@ export default function AddPlantModal({ onClose, onSubmit }) {
         {error && <p className="add-plant-error">{error}</p>}
 
         <div className="add-plant-footer">
-          <button type="button" className="add-plant-cancel" onClick={onClose}>Cancel</button>
+          {onClose && (
+            <button type="button" className="add-plant-cancel" onClick={onClose}>Cancel</button>
+          )}
           <button type="submit" className="add-plant-done" disabled={saving}>
-            {saving ? "Saving…" : "Done"}
+            {saving ? "Saving…" : submitLabel}
           </button>
         </div>
       </form>

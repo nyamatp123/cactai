@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listPlants, createPlant, deletePlant } from "../api/plants";
+import { listPlants, createPlant, deletePlant, updatePlant as apiUpdatePlant } from "../api/plants";
 
 export const THEME_LABELS = {
   light: "Light mode",
@@ -57,9 +57,11 @@ export default function useSettings() {
     setPlants((prev) => prev.filter((p) => p.id !== id));
   }
 
+  // Throws on failure so the caller can show the error
   async function updatePlant(id, changes) {
-    // TODO: PATCH /api/plants/:id with changes
-    setPlants((prev) => prev.map((p) => (p.id === id ? { ...p, ...changes } : p)));
+    const plant = await apiUpdatePlant(id, changes);
+    setPlants((prev) => prev.map((p) => (p.id === id ? { ...p, ...plant } : p)));
+    return plant;
   }
 
   async function changePassword(currentPassword, newPassword) {
