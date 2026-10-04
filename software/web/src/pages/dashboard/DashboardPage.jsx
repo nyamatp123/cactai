@@ -64,23 +64,23 @@ export default function DashboardPage() {
   const selectedId = selected?.id;
   // The side panel and chat always describe "now", so they use the day series
   // whatever range the charts show
-  const { rows: panelRows, lightUnit: panelLightUnit } = useReadings({
+  const { rows: panelRows, lightUnit: panelLightUnit, source: panelSource } = useReadings({
     plantId: selectedId,
     plantType: selected?.type,
     range: 'day',
   });
   const panelReadings = useMemo(() => {
     if (panelRows.length === 0) return null;
-    const current = currentReading(panelRows, 'day');
-    const avg = averages(panelRows);
+    const current = currentReading(panelRows, 'day', panelSource);
+    const avg = averages(panelRows, panelSource);
     return {
-      latestMoisture: current.moisture,
-      latestLux: current.light,
+      latestMoisture: current?.moisture ?? null,
+      latestLux: current?.light ?? null,
       avgMoisture: avg.moisture,
       avgLux: avg.light,
       lightUnit: panelLightUnit,
     };
-  }, [panelRows, panelLightUnit]);
+  }, [panelRows, panelLightUnit, panelSource]);
 
   const chatKey = selectedId;
   const chatMessages = chatHistory.get(chatKey) ?? [];

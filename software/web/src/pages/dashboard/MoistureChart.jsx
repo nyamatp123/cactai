@@ -5,7 +5,12 @@ import { THIRST_LINE } from './plantStatus';
 
 const TICK = { fontSize: 11, fill: '#7a8f82' };
 
-export default function MoistureChart({ data, thirstLine = THIRST_LINE }) {
+// `data` comes from mergeReadings.js: sampleMoisture is the CSV history and
+// moisture is live. The X axis uses idx because the two can repeat clock times.
+export default function MoistureChart({ data, thirstLine = THIRST_LINE, hasLive = false, liveStartIndex = -1 }) {
+  const livePoints = data.filter(r => r.moisture != null).length;
+  const labelAt = i => data[i]?.label ?? '';
+
   return (
     <div className="chart-card">
       <div className="chart-card-header">
@@ -19,7 +24,8 @@ export default function MoistureChart({ data, thirstLine = THIRST_LINE }) {
         margin={{ top: 10, right: 16, bottom: 0, left: -20 }}
       >
         <XAxis
-          dataKey="label"
+          dataKey="idx"
+          tickFormatter={labelAt}
           tick={TICK}
           tickLine={false}
           axisLine={false}
@@ -45,13 +51,35 @@ export default function MoistureChart({ data, thirstLine = THIRST_LINE }) {
           }}
           labelStyle={{ color: '#5e7266' }}
           itemStyle={{ color: '#1f3329' }}
-          formatter={v => [`${v}%`, 'Moisture']}
+          labelFormatter={labelAt}
+          formatter={v => [v == null ? '—' : `${v}%`, 'Moisture']}
         />
         <ReferenceLine
           y={thirstLine}
           stroke="#C4572F"
           strokeDasharray="6 4"
           strokeWidth={1.5}
+        />
+        {liveStartIndex > 0 && (
+          <ReferenceLine
+            x={liveStartIndex}
+            stroke="#7a8f82"
+            strokeDasharray="3 3"
+            label={{ value: 'Live', position: 'insideTopRight', fontSize: 11, fill: '#5e7266' }}
+          />
+        )}
+        {/* With no live points the history is drawn exactly like it always was */}
+        <Area
+          type="monotone"
+          dataKey="sampleMoisture"
+          stroke={hasLive ? '#9DB8A6' : '#3F7A55'}
+          strokeDasharray={hasLive ? '4 4' : undefined}
+          fill={hasLive ? '#F1F5EC' : '#E6EFDD'}
+          fillOpacity={1}
+          strokeWidth={hasLive ? 1.5 : 2}
+          dot={false}
+          activeDot={{ r: 4, fill: hasLive ? '#9DB8A6' : '#3F7A55' }}
+          connectNulls={false}
         />
         <Area
           type="monotone"
@@ -60,8 +88,9 @@ export default function MoistureChart({ data, thirstLine = THIRST_LINE }) {
           fill="#E6EFDD"
           fillOpacity={1}
           strokeWidth={2}
-          dot={false}
+          dot={livePoints < 3 ? { r: 3, fill: '#3F7A55', strokeWidth: 0 } : false}
           activeDot={{ r: 4, fill: '#3F7A55' }}
+          connectNulls={false}
         />
       </AreaChart>
     </div>

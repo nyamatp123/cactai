@@ -1,4 +1,5 @@
-export const THIRST_LINE = 15;
+// Fallback for types not in THIRST_LINE_BY_TYPE (e.g. "toothpick plant")
+export const THIRST_LINE = 10;
 
 // Light thresholds per unit. "raw" is the Cactai sensor's raw value (~3000 in
 // bright light); "lux" is for the sample data, which goes up to ~90,000 lux.

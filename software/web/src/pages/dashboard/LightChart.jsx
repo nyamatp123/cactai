@@ -1,5 +1,5 @@
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine,
 } from 'recharts';
 
 const LABEL = { day: 'Light across the day', week: 'Light across the week', month: 'Light across the month' };
@@ -10,7 +10,11 @@ function shortNumber(v) {
   return Math.abs(v) >= 1000 ? `${Math.round(v / 100) / 10}k` : `${v}`;
 }
 
-export default function LightChart({ data, timeRange = 'day', lightUnit = 'lux' }) {
+// `data` comes from mergeReadings.js: sampleLight is the CSV history and light
+// is live. A row has one or the other, so the stacked bars never overlap.
+export default function LightChart({ data, timeRange = 'day', lightUnit = 'lux', hasLive = false, liveStartIndex = -1 }) {
+  const labelAt = i => data[i]?.label ?? '';
+
   return (
     <div className="chart-card">
       <div className="chart-card-header">
@@ -23,7 +27,8 @@ export default function LightChart({ data, timeRange = 'day', lightUnit = 'lux' 
         margin={{ top: 10, right: 16, bottom: 0, left: -20 }}
       >
         <XAxis
-          dataKey="label"
+          dataKey="idx"
+          tickFormatter={labelAt}
           tick={TICK}
           tickLine={false}
           axisLine={false}
@@ -49,9 +54,26 @@ export default function LightChart({ data, timeRange = 'day', lightUnit = 'lux' 
           }}
           labelStyle={{ color: '#5e7266' }}
           itemStyle={{ color: '#1f3329' }}
-          formatter={v => [`${v.toLocaleString()}${lightUnit === 'lux' ? ' lux' : ''}`, 'Light']}
+          labelFormatter={labelAt}
+          formatter={v => [v == null ? '—' : `${v.toLocaleString()}${lightUnit === 'lux' ? ' lux' : ''}`, 'Light']}
         />
-        <Bar dataKey="light" fill="#F0D888" radius={[4, 4, 0, 0]} maxBarSize={28} />
+        {liveStartIndex > 0 && (
+          <ReferenceLine
+            x={liveStartIndex}
+            stroke="#7a8f82"
+            strokeDasharray="3 3"
+            label={{ value: 'Live', position: 'insideTopRight', fontSize: 11, fill: '#5e7266' }}
+          />
+        )}
+        {/* With no live points the history is drawn exactly like it always was */}
+        <Bar
+          dataKey="sampleLight"
+          stackId="light"
+          fill={hasLive ? '#F7EDC6' : '#F0D888'}
+          radius={[4, 4, 0, 0]}
+          maxBarSize={28}
+        />
+        <Bar dataKey="light" stackId="light" fill="#E2BE48" radius={[4, 4, 0, 0]} maxBarSize={28} />
       </BarChart>
     </div>
   );

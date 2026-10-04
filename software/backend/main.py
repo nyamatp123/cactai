@@ -290,10 +290,11 @@ class NewReading(BaseModel):
     health_score: float | None
     soil_raw: int | None
 
-# A failed sensor arrives as null and is stored as NULL, never 0 or -1.
-# NaN/Infinity are treated the same way.
+# A failed sensor arrives as null (or -1 from the firmware) and is stored as
+# NULL, never 0 or -1. NaN/Infinity and any negative value are treated the same
+# way, since none of these readings can really be below zero.
 def sensor_value(x):
-    return x if x is not None and math.isfinite(x) else None
+    return x if x is not None and math.isfinite(x) and x >= 0 else None
 
 def clamp_pct(x):
     return None if x is None else max(0.0, min(100.0, x))
@@ -302,8 +303,6 @@ def clamp_pct(x):
 @app.post("/readings", status_code=201, dependencies=[Depends(require_device)])
 def create_reading(reading: NewReading):
     lux = sensor_value(reading.lux)
-    if lux is not None and lux < 0:  # firmware sends -1 for a failed light sensor
-        lux = None
 
     with get_connection() as conn:
         plant = conn.execute(

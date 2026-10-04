@@ -31,6 +31,10 @@ export default function useReadings({ plantId, plantType, range }) {
     reason: data?.reason ?? null,
     lightUnit: data?.lightUnit ?? null,
     source: data?.source ?? null,
+    hasLive: data?.hasLive ?? false,
+    liveStartIndex: data?.liveStartIndex ?? -1,
+    latest: data?.latest ?? null,
+    sensorError: data?.sensorError ?? false,
     loading,
     error: loading ? null : result.error,
   };
