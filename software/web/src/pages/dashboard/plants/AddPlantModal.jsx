@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { acquiredDateFrom } from "./plantTime";
+import { moistureRangeForType } from "../plantStatus";
 import "./AddPlantModal.css";
 
 const CACTUS_TYPES = [
@@ -39,6 +40,14 @@ export default function AddPlantModal({ onClose, onSubmit }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // Picking a known type fills its moisture range from the knowledge base;
+  // the light range and any later manual edits are left alone
+  function handleType(val) {
+    setType(val);
+    const moisture = moistureRangeForType(val);
+    if (moisture) setRanges((r) => ({ ...r, ...moisture }));
+  }
 
   function handleRange(key, val) {
     const n = parseInt(val, 10);
@@ -115,7 +124,7 @@ export default function AddPlantModal({ onClose, onSubmit }) {
             value={type}
             placeholder="e.g. Barrel cactus"
             autoComplete="off"
-            onChange={(e) => setType(e.target.value)}
+            onChange={(e) => handleType(e.target.value)}
           />
           <datalist id="cactus-types">
             {CACTUS_TYPES.map((t) => <option key={t} value={t} />)}
