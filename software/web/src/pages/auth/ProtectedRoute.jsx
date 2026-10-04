@@ -1,11 +1,13 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { isLoggedIn } from "../../api/auth";
+import useAuthStatus from "./useAuthStatus";
 
 export default function ProtectedRoute() {
-    const location = useLocation();
+  const location = useLocation();
+  const status = useAuthStatus();
 
-    if (!isLoggedIn()) {
-        return <Navigate to="/login" replace state={{ from: location }} />;
-    }
-    return <Outlet />;
+  if (status === "checking") return null; // TODO: loading spinner
+  if (status === "out") {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+  return <Outlet />;
 }

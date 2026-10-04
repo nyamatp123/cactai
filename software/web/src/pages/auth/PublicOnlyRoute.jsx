@@ -1,9 +1,10 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { isLoggedIn } from "../../api/auth";
+import useAuthStatus from "./useAuthStatus";
 
 export default function PublicOnlyRoute() {
-    if (isLoggedIn()) {
-        return <Navigate to="/dashboard" replace />;
-    }
-    return <Outlet />;
+  const status = useAuthStatus();
+
+  if (status === "checking") return null; // TODO: loading spinner
+  if (status === "in") return <Navigate to="/dashboard" replace />;
+  return <Outlet />;
 }
