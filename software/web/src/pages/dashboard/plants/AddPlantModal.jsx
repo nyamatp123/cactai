@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { acquiredDateFrom } from "./plantTime";
-import { moistureRangeForType } from "../plantStatus";
 import "./AddPlantModal.css";
 
 const CACTUS_TYPES = [
@@ -18,8 +17,6 @@ const LOCATIONS = [
   "Greenhouse",
 ];
 
-const DEFAULT_RANGES = { moistureMin: 10, moistureMax: 40, lightMin: 60, lightMax: 100 };
-
 export default function AddPlantModal({ onClose, onSubmit }) {
   const [name, setName] = useState("");
   const [type, setType] = useState("");
@@ -28,9 +25,8 @@ export default function AddPlantModal({ onClose, onSubmit }) {
   const [deviceId, setDeviceId] = useState("");
   const [location, setLocation] = useState("");
   const [drainage, setDrainage] = useState(null); // true | false | null
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [ranges, setRanges] = useState(DEFAULT_RANGES);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const nameRef = useRef(null);
 
   useEffect(() => { nameRef.current?.focus(); }, []);
@@ -41,20 +37,7 @@ export default function AddPlantModal({ onClose, onSubmit }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Picking a known type fills its moisture range from the knowledge base;
-  // the light range and any later manual edits are left alone
-  function handleType(val) {
-    setType(val);
-    const moisture = moistureRangeForType(val);
-    if (moisture) setRanges((r) => ({ ...r, ...moisture }));
-  }
-
-  function handleRange(key, val) {
-    const n = parseInt(val, 10);
-    if (!isNaN(n)) setRanges((r) => ({ ...r, [key]: Math.max(0, Math.min(100, n)) }));
-  }
-
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const trimmedName = name.trim();
     const trimmedType = type.trim();
@@ -62,20 +45,22 @@ export default function AddPlantModal({ onClose, onSubmit }) {
       setError("Please add a name and a cactus type.");
       return;
     }
-    if (!deviceId.trim()) {
-      setError("Please enter a device ID so we can match sensor readings.");
-      return;
-    }
     const n = Math.max(0, parseInt(amount, 10) || 0);
-    onSubmit({
-      name: trimmedName,
-      type: trimmedType,
-      acquiredAt: acquiredDateFrom(n, unit),
-      deviceId: deviceId.trim(),
-      location: location || null,
-      drainage,
-      idealRanges: ranges,
-    });
+    setError("");
+    setSaving(true);
+    try {
+      await onSubmit({
+        name: trimmedName,
+        type: trimmedType,
+        acquiredAt: acquiredDateFrom(n, unit),
+        deviceId: deviceId.trim() || null, // optional for now
+        location: location || null,
+        drainage,
+      });
+    } catch (err) {
+      setError(err.message || "Couldn't save the plant. Please try again.");
+      setSaving(false);
+    }
   }
 
   return (
@@ -124,7 +109,7 @@ export default function AddPlantModal({ onClose, onSubmit }) {
             value={type}
             placeholder="e.g. Barrel cactus"
             autoComplete="off"
-            onChange={(e) => handleType(e.target.value)}
+            onChange={(e) => setType(e.target.value)}
           />
           <datalist id="cactus-types">
             {CACTUS_TYPES.map((t) => <option key={t} value={t} />)}
@@ -152,7 +137,7 @@ export default function AddPlantModal({ onClose, onSubmit }) {
 
         <div className="add-plant-field">
           <label htmlFor="plant-device">
-            Device ID <span className="add-plant-required">required</span>
+            Device ID <span className="add-plant-hint">(optional)</span>
           </label>
           <input
             id="plant-device"
@@ -197,52 +182,13 @@ export default function AddPlantModal({ onClose, onSubmit }) {
           <p className="add-plant-hint">Affects moisture thresholds — pots without drainage need lower limits.</p>
         </div>
 
-        {/* ── Section: Advanced (collapsible) ── */}
-        <button
-          type="button"
-          className="add-plant-advanced-toggle"
-          onClick={() => setShowAdvanced((v) => !v)}
-          aria-expanded={showAdvanced}
-        >
-          <span>Override ideal ranges</span>
-          <span className="add-plant-chevron">{showAdvanced ? "▲" : "▼"}</span>
-        </button>
-
-        {showAdvanced && (
-          <div className="add-plant-advanced">
-            <p className="add-plant-hint" style={{ marginBottom: 10 }}>
-              Defaults are set by cactus type. Adjust if the auto-assigned ranges don't fit.
-            </p>
-            <div className="add-plant-range-grid">
-              <div className="add-plant-field">
-                <label htmlFor="range-moist-min">Moisture min (%)</label>
-                <input id="range-moist-min" type="number" min="0" max="100" value={ranges.moistureMin}
-                  onChange={(e) => handleRange("moistureMin", e.target.value)} />
-              </div>
-              <div className="add-plant-field">
-                <label htmlFor="range-moist-max">Moisture max (%)</label>
-                <input id="range-moist-max" type="number" min="0" max="100" value={ranges.moistureMax}
-                  onChange={(e) => handleRange("moistureMax", e.target.value)} />
-              </div>
-              <div className="add-plant-field">
-                <label htmlFor="range-light-min">Light min (%)</label>
-                <input id="range-light-min" type="number" min="0" max="100" value={ranges.lightMin}
-                  onChange={(e) => handleRange("lightMin", e.target.value)} />
-              </div>
-              <div className="add-plant-field">
-                <label htmlFor="range-light-max">Light max (%)</label>
-                <input id="range-light-max" type="number" min="0" max="100" value={ranges.lightMax}
-                  onChange={(e) => handleRange("lightMax", e.target.value)} />
-              </div>
-            </div>
-          </div>
-        )}
-
         {error && <p className="add-plant-error">{error}</p>}
 
         <div className="add-plant-footer">
           <button type="button" className="add-plant-cancel" onClick={onClose}>Cancel</button>
-          <button type="submit" className="add-plant-done">Done</button>
+          <button type="submit" className="add-plant-done" disabled={saving}>
+            {saving ? "Saving…" : "Done"}
+          </button>
         </div>
       </form>
     </div>

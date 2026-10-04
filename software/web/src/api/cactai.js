@@ -2,12 +2,12 @@
 // from the browser: the API key lives only on the backend.
 
 import { API_URL } from './client';
-import { lightLabel, moistureLabel } from '../pages/dashboard/plantStatus';
+import { lightLabel, moistureLabel, moistureRangeForType } from '../pages/dashboard/plantStatus';
 
 function buildContext(plant, readings) {
   const { latestMoisture: moisture, latestLux: light, avgMoisture, avgLux } = readings ?? {};
   // Same labels as the readings card, so the reply and the card agree
-  const soil = moisture == null ? null : moistureLabel(moisture, plant?.idealRanges);
+  const soil = moisture == null ? null : moistureLabel(moisture, moistureRangeForType(plant?.type));
   const lightLevel = light == null ? null : lightLabel(light);
   return {
     name: plant?.name ?? null,
