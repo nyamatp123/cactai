@@ -4,11 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is not set")
+
 def get_connection():
-    return psycopg.connect(
-        host="127.0.0.1",
-        port=5432,
-        dbname="cactai",
-        user="postgres",
-        password=os.getenv("DB_PASSWORD"),
-    )
+    return psycopg.connect(DATABASE_URL)

@@ -9,7 +9,9 @@ import "./Settings.css";
 export default function SettingsPage() {
   // "overview" | "plants" | "account"
   const [section, setSection] = useState("overview");
-  const { user, plants, updateProfile, updateTheme, changePassword } = useSettings();
+  const { user, plants, updateProfile, updateTheme, addPlant, updatePlant, removePlant, changePassword } = useSettings();
+
+  if (!user) return null; // loading
 
   return (
     <div className="settings-page">
@@ -20,7 +22,14 @@ export default function SettingsPage() {
           {section === "overview" && (
             <AccountOverview user={user} plants={plants} onNavigate={setSection} />
           )}
-          {section === "plants" && <ManagePlants plants={plants} />}
+          {section === "plants" && (
+            <ManagePlants
+              plants={plants}
+              onAddPlant={addPlant}
+              onUpdatePlant={updatePlant}
+              onDeletePlant={removePlant}
+            />
+          )}
           {section === "account" && (
             <ManageAccount
               user={user}

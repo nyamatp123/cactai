@@ -46,12 +46,13 @@ export default function PlantPanel({
   onCloseChat,
   chatMessages,
   onAddMessage,
+  onLogout,
 }) {
   const moisture = readings?.latestMoisture ?? null;
   const lux = readings?.latestLux ?? null;
 
-  const thirsty = isThirsty(moisture);
-  const lightLevelLabel = lightLabel(lux);
+  const thirsty = isThirsty(moisture, plant?.type);
+  const lightLevelLabel = lightLabel(lux, readings?.lightUnit);
 
   const rawTip = useRotatingTip(cactusTips);
   const tip = rawTip.startsWith('Tip: ') ? rawTip.slice(5) : rawTip;
@@ -71,15 +72,22 @@ export default function PlantPanel({
     return 'Your plant is drowning, try draining some water please';
   }
   const mood = moodLine(moisture);
+  // "Not sure" counts as no type chosen
+  const plantType = plant?.type?.trim();
+  const showType = plantType && plantType.toLowerCase() !== 'not sure';
 
   return (
     <aside className={`plant-panel${isChatOpen ? ' chat-open' : ''}`}>
+      <button type="button" className="pp-logout" onClick={onLogout}>
+        Log out
+      </button>
 
       {/* 1. Plant card — expanded + compact states both always mounted */}
       <div className="pp-card pp-plant-card">
         <div className="pp-plant-expanded">
           <CactusSVG />
           <p className="pp-plant-name">{plant?.name ?? 'Your plant'}</p>
+          {showType && <p className="pp-plant-type">{plantType}</p>}
           <p className="pp-plant-mood">{mood}</p>
         </div>
 

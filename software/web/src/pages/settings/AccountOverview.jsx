@@ -9,7 +9,6 @@ export default function AccountOverview({ user, plants, onNavigate }) {
     { label: "Last name", value: user.lastName },
     { label: "Username", value: user.username },
     { label: "Email", value: user.email },
-    { label: "Phone (optional)", value: user.phone },
     { label: "Theme", value: THEME_LABELS[user.theme] },
   ];
 

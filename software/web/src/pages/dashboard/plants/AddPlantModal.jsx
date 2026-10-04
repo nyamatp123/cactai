@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { acquiredDateFrom } from "./plantTime";
+import { acquiredDateFrom, durationFrom } from "./plantTime";
 import "./AddPlantModal.css";
 
 const CACTUS_TYPES = [
   "Barrel cactus", "Golden barrel", "Prickly pear", "Bunny ears cactus",
   "Moon cactus", "Old man cactus", "Christmas cactus", "Saguaro",
-  "Pincushion cactus", "Not sure",
+  "Pincushion cactus", "Thimble cactus", "Elephant cactus", "Not sure",
 ];
 const UNITS = ["days", "weeks", "months", "years"];
 const LOCATIONS = [
@@ -17,35 +17,38 @@ const LOCATIONS = [
   "Greenhouse",
 ];
 
-const DEFAULT_RANGES = { moistureMin: 10, moistureMax: 40, lightMin: 60, lightMax: 100 };
-
-export default function AddPlantModal({ onClose, onSubmit }) {
-  const [name, setName] = useState("");
-  const [type, setType] = useState("");
-  const [amount, setAmount] = useState("3");
-  const [unit, setUnit] = useState("months");
-  const [deviceId, setDeviceId] = useState("");
-  const [location, setLocation] = useState("");
-  const [drainage, setDrainage] = useState(null); // true | false | null
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [ranges, setRanges] = useState(DEFAULT_RANGES);
+// Without onClose the modal can't be dismissed (used for the required first plant).
+// Pass initialPlant to edit an existing plant instead of adding one.
+export default function AddPlantModal({
+  onClose,
+  onSubmit,
+  initialPlant = null,
+  title = "Add a cactus",
+  subtitle = "Tell Cactai about your plant.",
+  submitLabel = "Done",
+}) {
+  const initialDuration = durationFrom(initialPlant?.acquiredAt);
+  const [name, setName] = useState(initialPlant?.name ?? "");
+  const [type, setType] = useState(initialPlant?.type ?? "");
+  const [amount, setAmount] = useState(initialDuration.amount);
+  const [unit, setUnit] = useState(initialDuration.unit);
+  const [deviceId, setDeviceId] = useState(initialPlant?.deviceId ?? "");
+  const [location, setLocation] = useState(initialPlant?.location ?? "");
+  const [drainage, setDrainage] = useState(initialPlant?.drainage ?? null); // true | false | null
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const nameRef = useRef(null);
 
   useEffect(() => { nameRef.current?.focus(); }, []);
 
   useEffect(() => {
+    if (!onClose) return;
     function onKey(e) { if (e.key === "Escape") onClose(); }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  function handleRange(key, val) {
-    const n = parseInt(val, 10);
-    if (!isNaN(n)) setRanges((r) => ({ ...r, [key]: Math.max(0, Math.min(100, n)) }));
-  }
-
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const trimmedName = name.trim();
     const trimmedType = type.trim();
@@ -53,26 +56,31 @@ export default function AddPlantModal({ onClose, onSubmit }) {
       setError("Please add a name and a cactus type.");
       return;
     }
-    if (!deviceId.trim()) {
-      setError("Please enter a device ID so we can match sensor readings.");
-      return;
-    }
     const n = Math.max(0, parseInt(amount, 10) || 0);
-    onSubmit({
-      name: trimmedName,
-      type: trimmedType,
-      acquiredAt: acquiredDateFrom(n, unit),
-      deviceId: deviceId.trim(),
-      location: location || null,
-      drainage,
-      idealRanges: ranges,
-    });
+    // When editing, keep the exact saved date unless the duration was changed
+    const durationUnchanged =
+      initialPlant && amount === initialDuration.amount && unit === initialDuration.unit;
+    setError("");
+    setSaving(true);
+    try {
+      await onSubmit({
+        name: trimmedName,
+        type: trimmedType,
+        acquiredAt: durationUnchanged ? initialPlant.acquiredAt : acquiredDateFrom(n, unit),
+        deviceId: deviceId.trim() || null, // optional for now
+        location: location || null,
+        drainage,
+      });
+    } catch (err) {
+      setError(err.message || "Couldn't save the plant. Please try again.");
+      setSaving(false);
+    }
   }
 
   return (
     <div
       className="add-plant-overlay"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => { if (onClose && e.target === e.currentTarget) onClose(); }}
     >
       <form
         className="add-plant-modal"
@@ -83,12 +91,14 @@ export default function AddPlantModal({ onClose, onSubmit }) {
       >
         <div className="add-plant-head">
           <div>
-            <h2 id="add-plant-title">Add a cactus</h2>
-            <p>Tell Cactai about your plant.</p>
+            <h2 id="add-plant-title">{title}</h2>
+            <p>{subtitle}</p>
           </div>
-          <button type="button" className="add-plant-x" onClick={onClose} aria-label="Close">
-            &times;
-          </button>
+          {onClose && (
+            <button type="button" className="add-plant-x" onClick={onClose} aria-label="Close">
+              &times;
+            </button>
+          )}
         </div>
 
         {/* ── Section: About ── */}
@@ -143,7 +153,7 @@ export default function AddPlantModal({ onClose, onSubmit }) {
 
         <div className="add-plant-field">
           <label htmlFor="plant-device">
-            Device ID <span className="add-plant-required">required</span>
+            Device ID <span className="add-plant-hint">(optional)</span>
           </label>
           <input
             id="plant-device"
@@ -188,52 +198,15 @@ export default function AddPlantModal({ onClose, onSubmit }) {
           <p className="add-plant-hint">Affects moisture thresholds — pots without drainage need lower limits.</p>
         </div>
 
-        {/* ── Section: Advanced (collapsible) ── */}
-        <button
-          type="button"
-          className="add-plant-advanced-toggle"
-          onClick={() => setShowAdvanced((v) => !v)}
-          aria-expanded={showAdvanced}
-        >
-          <span>Override ideal ranges</span>
-          <span className="add-plant-chevron">{showAdvanced ? "▲" : "▼"}</span>
-        </button>
-
-        {showAdvanced && (
-          <div className="add-plant-advanced">
-            <p className="add-plant-hint" style={{ marginBottom: 10 }}>
-              Defaults are set by cactus type. Adjust if the auto-assigned ranges don't fit.
-            </p>
-            <div className="add-plant-range-grid">
-              <div className="add-plant-field">
-                <label htmlFor="range-moist-min">Moisture min (%)</label>
-                <input id="range-moist-min" type="number" min="0" max="100" value={ranges.moistureMin}
-                  onChange={(e) => handleRange("moistureMin", e.target.value)} />
-              </div>
-              <div className="add-plant-field">
-                <label htmlFor="range-moist-max">Moisture max (%)</label>
-                <input id="range-moist-max" type="number" min="0" max="100" value={ranges.moistureMax}
-                  onChange={(e) => handleRange("moistureMax", e.target.value)} />
-              </div>
-              <div className="add-plant-field">
-                <label htmlFor="range-light-min">Light min (%)</label>
-                <input id="range-light-min" type="number" min="0" max="100" value={ranges.lightMin}
-                  onChange={(e) => handleRange("lightMin", e.target.value)} />
-              </div>
-              <div className="add-plant-field">
-                <label htmlFor="range-light-max">Light max (%)</label>
-                <input id="range-light-max" type="number" min="0" max="100" value={ranges.lightMax}
-                  onChange={(e) => handleRange("lightMax", e.target.value)} />
-              </div>
-            </div>
-          </div>
-        )}
-
         {error && <p className="add-plant-error">{error}</p>}
 
         <div className="add-plant-footer">
-          <button type="button" className="add-plant-cancel" onClick={onClose}>Cancel</button>
-          <button type="submit" className="add-plant-done">Done</button>
+          {onClose && (
+            <button type="button" className="add-plant-cancel" onClick={onClose}>Cancel</button>
+          )}
+          <button type="submit" className="add-plant-done" disabled={saving}>
+            {saving ? "Saving…" : submitLabel}
+          </button>
         </div>
       </form>
     </div>

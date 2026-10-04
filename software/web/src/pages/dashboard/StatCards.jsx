@@ -1,16 +1,17 @@
-import { lightLabel } from './plantStatus';
+// Shown when moisture is below the plant type's thirst line
+const NEEDS_WATER = { label: 'Needs water', bg: '#F8E3D8', arc: '#C4572F', track: '#F0CBB9' };
 
-// Moisture bands for a cactus
+// Moisture bands for a cactus that isn't thirsty
 const MOISTURE_BANDS = [
-  { max: 20,  label: 'Needs water',  bg: '#F8E3D8', arc: '#C4572F', track: '#F0CBB9', showWater: true  },
-  { max: 40,  label: 'Healthy zone', bg: '#FEF9C3', arc: '#C9A217', track: '#EDE7A0', showWater: false },
-  { max: 60,  label: 'Well watered', bg: '#DDE9D6', arc: '#3F7A55', track: '#B8D4BC', showWater: false },
-  { max: 80,  label: 'Too wet',      bg: '#F5D0C8', arc: '#8B2E1F', track: '#E8B8B0', showWater: false },
-  { max: 100, label: 'Overwatered',  bg: '#E8AFA3', arc: '#5C1409', track: '#D49088', showWater: false },
+  { max: 40,  label: 'Healthy zone', bg: '#FEF9C3', arc: '#C9A217', track: '#EDE7A0' },
+  { max: 60,  label: 'Well watered', bg: '#DDE9D6', arc: '#3F7A55', track: '#B8D4BC' },
+  { max: 80,  label: 'Too wet',      bg: '#F5D0C8', arc: '#8B2E1F', track: '#E8B8B0' },
+  { max: 100, label: 'Overwatered',  bg: '#E8AFA3', arc: '#5C1409', track: '#D49088' },
 ];
 
-function getMoistureBand(pct) {
+function getMoistureBand(pct, needsWater) {
   if (pct == null) return null;
+  if (needsWater) return NEEDS_WATER;
   return MOISTURE_BANDS.find(b => pct < b.max) ?? MOISTURE_BANDS[MOISTURE_BANDS.length - 1];
 }
 
@@ -65,15 +66,20 @@ function LightPill({ level }) {
 }
 
 // TODO: wire onWaterNow to backend when available
-export default function StatCards({ readings, onWaterNow }) {
-  const hasData = readings != null;
-  const moisture = hasData ? readings.latestMoisture : null;
-  const lux = hasData ? readings.latestLux : null;
-  const avgMoisture = hasData ? readings.avgMoisture : null;
-  const avgLux = hasData ? readings.avgLux : null;
+export default function StatCards({
+  current,
+  averages,
+  needsWater,
+  lightLevel,
+  avgLabel = 'Avg today',
+  onWaterNow,
+}) {
+  const moisture = current?.moisture ?? null;
+  const lux = current?.light ?? null;
+  const avgMoisture = averages?.moisture ?? null;
+  const avgLux = averages?.light ?? null;
 
-  const band = getMoistureBand(moisture);
-  const level = lightLabel(lux);
+  const band = getMoistureBand(moisture, needsWater);
 
   return (
     <div className="stat-cards-row">
@@ -91,7 +97,7 @@ export default function StatCards({ readings, onWaterNow }) {
           <span className="stat-card-status">
             {moisture == null ? '—' : band?.label}
           </span>
-          {band?.showWater && (
+          {needsWater && (
             <button className="stat-water-btn" onClick={onWaterNow} type="button">
               Water now
             </button>
@@ -105,7 +111,7 @@ export default function StatCards({ readings, onWaterNow }) {
         <div className="stat-card stat-card--light" style={{ background: '#F8EFC9' }}>
           <div className="stat-card-light-top">
             <span className="stat-card-label">Light now</span>
-            <LightPill level={lux == null ? '—' : level} />
+            <LightPill level={lux == null ? '—' : lightLevel} />
           </div>
           <span className="stat-card-big-num">
             {lux != null ? lux.toLocaleString() : '—'}
@@ -114,7 +120,7 @@ export default function StatCards({ readings, onWaterNow }) {
 
         {/* Avg today */}
         <div className="stat-card stat-card--avg" style={{ background: '#DDE9D6' }}>
-          <span className="stat-card-label">Avg today</span>
+          <span className="stat-card-label">{avgLabel}</span>
           <span className="stat-card-avg-text">
             {avgMoisture != null ? `${avgMoisture}%` : '—'}
             {' · '}

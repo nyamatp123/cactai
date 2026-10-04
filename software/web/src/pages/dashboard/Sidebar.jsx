@@ -2,12 +2,13 @@ import { Link } from "react-router-dom";
 import CactaiLogo from "./CactaiLogo";
 import { getPlantIcon } from "./plantIcons";
 import { PlusIcon, SettingsIcon } from "./uiIcons";
+import logo from "../../assets/cactai-logo.png";
 
 export default function Sidebar({ plants, selectedId, onSelect, onAddPlant }) {
   return (
     <aside className="dash-sidebar">
       <div className="dash-logo" aria-label="Cactai">
-        <CactaiLogo />
+        <img src={logo} alt="Cactai" className="dash-logo-img" />
       </div>
 
       <nav className="dash-plants" aria-label="Your plants">

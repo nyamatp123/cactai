@@ -185,6 +185,23 @@
 .text-link:hover {
   text-decoration: underline;
 }
+.text-link.is-danger {
+  color: #9a3f1f;
+}
+.text-link:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.plant-note {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.plant-error {
+  margin: 0 0 12px;
+  color: #9a3f1f;
+}
 
 /* Overview */
 .detail-grid {
@@ -429,6 +446,11 @@
 }
 .settings-page input::placeholder {
   color: var(--faint);
+}
+.settings-page input:disabled {
+  background: var(--panel);
+  color: var(--muted);
+  cursor: not-allowed;
 }
 .settings-page input:focus,
 .theme-select:focus {
