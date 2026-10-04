@@ -1,60 +1,48 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import Any
+from pydantic import BaseModel
 import psycopg
 from db import get_connection
-from ai_insights import get_chat_reply
 import bcrypt
 import os
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from fastapi import Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY environment variable is not set")
 
-bearer = HTTPBearer()
+TOKEN_HOURS = 24
+COOKIE_NAME = "access_token"
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # TODO: restrict before deploying
+    allow_origins=["http://localhost:5173"],  # TODO: add production frontend URL
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-class NewPlant(BaseModel):
-    user_id: int
-    name: str
-    species: str | None = None
 
-@app.post("/plants")
-def create_plant(plant: NewPlant):
+# ---------- Auth helpers ----------
+
+def get_current_user_id(request: Request) -> int:
+    token = request.cookies.get(COOKIE_NAME)
+    if not token:
+        raise HTTPException(status_code=401, detail="Not logged in")
     try:
-        with get_connection() as conn:
-            row = conn.execute(
-                "INSERT INTO plants (user_id, name, species) "
-                "VALUES (%s, %s, %s) RETURNING id, user_id, name, species",
-                (plant.user_id, plant.name, plant.species),
-            ).fetchone()
-    except psycopg.errors.ForeignKeyViolation:
-        raise HTTPException(status_code=404, detail="User does not exist")
-    
-    return {"id": row[0], "user_id": row[1], "name": row[2], "species": row[3]}
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Session expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid session")
+    return int(payload["sub"])
 
-@app.get("/users/{user_id}/plants")
-def list_plants(user_id: int):
-    with get_connection() as conn:
-        rows = conn.execute(
-            "SELECT id, name, species FROM plants WHERE user_id = %s ORDER BY id",
-            (user_id,)
-        ).fetchall()
-    return [{"id": r[0], "name": r[1], "species": r[2]} for r in rows]
+
+# ---------- Users and auth ----------
 
 class NewUser(BaseModel):
     username: str
@@ -80,7 +68,7 @@ class LoginData(BaseModel):
     password: str
 
 @app.post("/login")
-def login(data: LoginData):
+def login(data: LoginData, response: Response):
     with get_connection() as conn:
         row = conn.execute(
             "SELECT id, password_hash FROM users WHERE email = %s",
@@ -91,24 +79,62 @@ def login(data: LoginData):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     token = jwt.encode(
-        {"sub": str(row[0]), "exp": datetime.now(timezone.utc) + timedelta(hours=24)},
+        {"sub": str(row[0]), "exp": datetime.now(timezone.utc) + timedelta(hours=TOKEN_HOURS)},
         SECRET_KEY,
         algorithm="HS256",
     )
-    return {"access_token": token, "token_type": "bearer"}
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value=token,
+        httponly=True,               # JavaScript can't read it
+        samesite="lax",
+        secure=False,                # TODO: set True in production (HTTPS only)
+        max_age=TOKEN_HOURS * 3600,  # browser deletes it after this many seconds
+    )
+    return {"ok": True}
+
+@app.post("/logout")
+def logout(response: Response):
+    response.delete_cookie(COOKIE_NAME)
+    return {"ok": True}
+
+@app.get("/me")
+def me(user_id: int = Depends(get_current_user_id)):
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT id, username, email FROM users WHERE id = %s", (user_id,)
+        ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    return {"id": row[0], "username": row[1], "email": row[2]}
 
 
-class ChatTurn(BaseModel):
-    role: str  # "user" or "cactai"
-    text: str
+# ---------- Plants (logged-in user only) ----------
 
-class ChatRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=2000)
-    history: list[ChatTurn] = []
-    context: dict[str, Any] | None = None
+class NewPlant(BaseModel):
+    name: str
+    species: str | None = None
 
-# Plain def: the Gemini call blocks, so FastAPI runs this in a threadpool
-@app.post("/chat")
-def chat(req: ChatRequest):
-    history = [turn.model_dump() for turn in req.history]
-    return get_chat_reply(req.message, history, req.context)
+@app.post("/plants", status_code=201)
+def create_plant(plant: NewPlant, user_id: int = Depends(get_current_user_id)):
+    with get_connection() as conn:
+        row = conn.execute(
+            "INSERT INTO plants (user_id, name, species) "
+            "VALUES (%s, %s, %s) RETURNING id, user_id, name, species",
+            (user_id, plant.name, plant.species),
+        ).fetchone()
+    return {"id": row[0], "user_id": row[1], "name": row[2], "species": row[3]}
+
+@app.get("/plants")
+def list_plants(user_id: int = Depends(get_current_user_id)):
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT id, name, species FROM plants WHERE user_id = %s ORDER BY id",
+            (user_id,)
+        ).fetchall()
+    return [{"id": r[0], "name": r[1], "species": r[2]} for r in rows]
+
+# ---------- Cactai chat (Gemini) ----------
+# Route lives in chat_routes.py; requires login like the routes above
+from chat_routes import router as chat_router
+app.include_router(chat_router, dependencies=[Depends(get_current_user_id)])

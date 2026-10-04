@@ -24,6 +24,7 @@ export async function askCactai({ question, plant, readings, history }) {
     // Backend gives up on Gemini after 30s; this is a backstop so the chat never spins forever
     signal: AbortSignal.timeout(40000),
     method: 'POST',
+    credentials: 'include', // send the login cookie; /chat requires login
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       message: question,
