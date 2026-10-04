@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "motor.hpp"
+#include "SoilSensor.h"
 
 constexpr uint8_t MOTOR_PIN = 26;
 constexpr uint32_t STEP_DELAY_MS = 20;

@@ -1,8 +1,9 @@
 #include "motor.hpp"
 
 Motor::Motor(uint8_t pwmPin) : pwmPin_(pwmPin) {
-    ledcAttach(pwmPin_, PWM_FREQ_HZ, PWM_RESOLUTION_BITS);
-    ledcWrite(pwmPin_, 0);
+    ledcSetup(0, PWM_FREQ_HZ, PWM_RESOLUTION_BITS);
+    ledcAttachPin(pwmPin_, 0);
+    ledcWrite(0, 0);
 }
 
 void Motor::setPWM(uint8_t percent) {
