@@ -1,13 +1,15 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
-const TOKEN_KEY = "cactai_token";
+// Requests go to /api, which Vite proxies to the backend (see vite.config.js),
+// so the browser treats frontend and backend as the same site and sends the cookie.
+const API_URL = import.meta.env.VITE_API_URL ?? "/api";
 
-async function request(path, body) {
+async function request(path, { method = "GET", body } = {}) {
   let res;
   try {
     res = await fetch(`${API_URL}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      method,
+      credentials: "include", // send and receive the auth cookie
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
     });
   } catch {
     throw new Error("Can't reach the server. Check that the backend is running.");
@@ -15,30 +17,25 @@ async function request(path, body) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    // FastAPI returns a string for HTTPException, an array for validation errors
     const detail = Array.isArray(data.detail) ? data.detail[0]?.msg : data.detail;
-    throw new Error(detail || `Request failed (${res.status})`);
+    const err = new Error(detail || `Request failed (${res.status})`);
+    err.status = res.status;
+    throw err;
   }
   return data;
 }
 
-export async function login({ email, password }) {
-  const data = await request("/login", { email, password });
-  localStorage.setItem(TOKEN_KEY, data.access_token);
-  return data;
+export function login({ email, password }) {
+  return request("/login", { method: "POST", body: { email, password } });
 }
 
 export async function signup({ username, email, password }) {
-  await request("/users", { username, email, password });
+  await request("/users", { method: "POST", body: { username, email, password } });
   return login({ email, password });
 }
 
-export function getToken() {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
 export function logout() {
-  localStorage.removeItem(TOKEN_KEY);
+  return request("/logout", { method: "POST" });
 }
 
 export function isLoggedIn() {
@@ -86,4 +83,13 @@ export async function authRequest(path, { method = "GET", body } = {}) {
         throw new Error(detail || `Request failed (${res.status})`);
     }
     return data;
+}
+// Returns the logged-in user, or null if the cookie is missing or expired.
+export async function getCurrentUser() {
+  try {
+    return await request("/me");
+  } catch (err) {
+    if (err.status === 401) return null;
+    throw err;
+  }
 }
