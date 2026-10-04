@@ -1,17 +1,25 @@
-from fastapi import FastAPI, HTTPException, Depends, Request, Response
+from fastapi import FastAPI, HTTPException, Depends, Request, Response, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import psycopg
 from db import get_connection
 import bcrypt
+import math
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import jwt
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY environment variable is not set")
+
+# Shared secret the ESP32 sends in the X-Device-Key header
+DEVICE_KEY = os.getenv("DEVICE_KEY")
+if not DEVICE_KEY:
+    raise RuntimeError("DEVICE_KEY environment variable is not set")
 
 TOKEN_HOURS = 24
 COOKIE_NAME = "access_token"
@@ -40,6 +48,13 @@ def get_current_user_id(request: Request) -> int:
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid session")
     return int(payload["sub"])
+
+def require_device(x_device_key: str | None = Header(default=None)):
+    # Compare as bytes: compare_digest raises on non-ASCII str input
+    if x_device_key is None or not secrets.compare_digest(
+        x_device_key.encode(), DEVICE_KEY.encode()
+    ):
+        raise HTTPException(status_code=401, detail="Invalid device key")
 
 
 # ---------- Users and auth ----------
@@ -263,6 +278,125 @@ def delete_plant(plant_id: int, user_id: int = Depends(get_current_user_id)):
         if len(owned) <= 1:
             raise HTTPException(status_code=409, detail="You need at least one plant")
         conn.execute("DELETE FROM plants WHERE id = %s", (plant_id,))
+
+
+# ---------- Sensor readings ----------
+
+class NewReading(BaseModel):
+    device_id: str
+    moisture_pct: float | None
+    lux: float | None
+    weight_g: float | None
+    health_score: float | None
+    soil_raw: int | None
+
+# A failed sensor arrives as null and is stored as NULL, never 0 or -1.
+# NaN/Infinity are treated the same way.
+def sensor_value(x):
+    return x if x is not None and math.isfinite(x) else None
+
+def clamp_pct(x):
+    return None if x is None else max(0.0, min(100.0, x))
+
+# recorded_at comes from the database default; the device clock isn't trusted
+@app.post("/readings", status_code=201, dependencies=[Depends(require_device)])
+def create_reading(reading: NewReading):
+    lux = sensor_value(reading.lux)
+    if lux is not None and lux < 0:  # firmware sends -1 for a failed light sensor
+        lux = None
+
+    with get_connection() as conn:
+        plant = conn.execute(
+            "SELECT id FROM plants WHERE device_id = %s", (reading.device_id,)
+        ).fetchone()
+        if plant is None:
+            raise HTTPException(status_code=404, detail="No plant paired with this device")
+        row = conn.execute(
+            "INSERT INTO sensor_readings "
+            "(plant_id, moisture_pct, lux, weight_g, health_score, soil_raw) "
+            "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id, recorded_at",
+            (plant[0], clamp_pct(sensor_value(reading.moisture_pct)), lux,
+             sensor_value(reading.weight_g), clamp_pct(sensor_value(reading.health_score)),
+             reading.soil_raw),
+        ).fetchone()
+    return {"id": row[0], "plant_id": plant[0], "recorded_at": row[1]}
+
+def round_or_none(x, digits=None):
+    return None if x is None else round(x, digits)
+
+def reading_out(t, moisture, light, weight, health):
+    return {
+        "t": t,
+        "moisture": round_or_none(moisture, 1),
+        "light": round_or_none(light),  # whole number
+        "weight": round_or_none(weight, 1),
+        "health": round_or_none(health, 1),
+    }
+
+def utc_iso(t):
+    return t.astimezone(timezone.utc).isoformat()
+
+@app.get("/plants/{plant_id}/readings")
+def plant_readings(
+    plant_id: int,
+    range_: str = Query("day", alias="range", pattern="^(day|week)$"),
+    tz: str = "UTC",
+    user_id: int = Depends(get_current_user_id),
+):
+    try:
+        ZoneInfo(tz)
+    except (ZoneInfoNotFoundError, ValueError):
+        raise HTTPException(status_code=400, detail="Unknown time zone")
+
+    with get_connection() as conn:
+        # 404 rather than 403 so other users' plant ids can't be probed
+        owned = conn.execute(
+            "SELECT 1 FROM plants WHERE id = %s AND user_id = %s", (plant_id, user_id)
+        ).fetchone()
+        if owned is None:
+            raise HTTPException(status_code=404, detail="Plant not found")
+
+        if range_ == "day":
+            # Last 24 hours in 15-minute buckets
+            rows = conn.execute(
+                "SELECT date_bin('15 minutes', recorded_at, TIMESTAMPTZ '2000-01-01') AS t, "
+                "AVG(moisture_pct), AVG(lux), AVG(weight_g), AVG(health_score) "
+                "FROM sensor_readings "
+                "WHERE plant_id = %s AND recorded_at >= now() - INTERVAL '24 hours' "
+                "GROUP BY t ORDER BY t",
+                (plant_id,),
+            ).fetchall()
+            out = [reading_out(utc_iso(r[0]), *r[1:]) for r in rows]
+        else:
+            # Today plus the 6 days before it, as calendar days in the user's time zone.
+            # Light is the daily peak, not the average.
+            try:
+                rows = conn.execute(
+                    "SELECT date_trunc('day', recorded_at AT TIME ZONE %s) AS day, "
+                    "AVG(moisture_pct), MAX(lux), AVG(weight_g), AVG(health_score) "
+                    "FROM sensor_readings "
+                    "WHERE plant_id = %s "
+                    "AND recorded_at >= (date_trunc('day', now() AT TIME ZONE %s) - INTERVAL '6 days') AT TIME ZONE %s "
+                    "GROUP BY day ORDER BY day",
+                    (tz, plant_id, tz, tz),
+                ).fetchall()
+            except psycopg.errors.InvalidParameterValue:
+                # Python knows the zone but Postgres doesn't
+                raise HTTPException(status_code=400, detail="Unknown time zone")
+            out = [reading_out(r[0].date().isoformat(), *r[1:]) for r in rows]
+
+        latest = conn.execute(
+            "SELECT recorded_at, moisture_pct, lux, weight_g, health_score "
+            "FROM sensor_readings WHERE plant_id = %s "
+            "ORDER BY recorded_at DESC LIMIT 1",
+            (plant_id,),
+        ).fetchone()
+
+    return {
+        "range": range_,
+        "rows": out,
+        "latest": reading_out(utc_iso(latest[0]), *latest[1:]) if latest else None,
+    }
 
 # ---------- Cactai chat (Gemini) ----------
 # Route lives in chat_routes.py; requires login like the routes above
