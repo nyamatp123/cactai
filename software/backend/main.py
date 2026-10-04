@@ -74,19 +74,19 @@ def create_user(user: NewUser):
     return {"id": row[0], "username": row[1], "email": row[2], "created_at": row[3]}
 
 class LoginData(BaseModel):
-    username: str
+    email: str
     password: str
 
 @app.post("/login")
 def login(data: LoginData):
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT id, password_hash FROM users WHERE username = %s",
-            (data.username,)
+            "SELECT id, password_hash FROM users WHERE email = %s",
+            (data.email,)
         ).fetchone()
 
     if row is None or not bcrypt.checkpw(data.password.encode(), row[1].encode()):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
     token = jwt.encode(
         {"sub": str(row[0]), "exp": datetime.now(timezone.utc) + timedelta(hours=24)},

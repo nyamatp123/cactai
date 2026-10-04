@@ -2,20 +2,35 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "./AuthLayout";
 import { GoogleIcon } from "./AuthArt";
+import { signup } from "../../api/auth";
 
 export default function SignupPage() {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    // TODO: validate input (email format, password rules, passwords match)
-    // TODO: call sign-up API with { name, email, password } and store session
-    navigate("/dashboard");
+    setError("");
+    if (password !== confirm) {
+      setError("Passwords don't match.");
+      return;
+    }
+    // TODO: add email format and password strength rules
+    setLoading(true);
+    try {
+      await signup({ username, email, password });
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleGoogle() {
@@ -28,15 +43,15 @@ export default function SignupPage() {
           <p className="login__subtitle">Start tracking your plant's moisture and light.</p>
 
           <form className="login__form" onSubmit={handleSubmit} noValidate>
-            <label className="login__label" htmlFor="name">Name</label>
+            <label className="login__label" htmlFor="username">Username</label>
             <input
-              id="name"
+              id="username"
               className="login__input"
               type="text"
-              autoComplete="name"
-              placeholder="Your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              autoComplete="username"
+              placeholder="Pick a username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
             />
 
             <label className="login__label" htmlFor="email">Email</label>
@@ -82,7 +97,11 @@ export default function SignupPage() {
               onChange={(e) => setConfirm(e.target.value)}
             />
 
-            <button type="submit" className="login__submit">Create account</button>
+            {error && <p className="login__error" role="alert">{error}</p>}
+
+            <button type="submit" className="login__submit" disabled={loading}>
+              {loading ? "Creating account…" : "Create account"}
+            </button>
           </form>
 
           <div className="login__divider"><span>or</span></div>
