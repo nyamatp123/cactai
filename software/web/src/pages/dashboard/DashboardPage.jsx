@@ -4,6 +4,7 @@ import { listPlants, createPlant } from "../../api/plants";
 import { getAccount } from "../../api/settings";
 import { logout } from "../../api/auth";
 import Sidebar from "./Sidebar";
+import MobileNav from "./MobileNav";
 import AddPlantModal from "./plants/AddPlantModal";
 import PlantView from "./plants/PlantView";
 import PlantPanel from "./PlantPanel";
@@ -119,6 +120,14 @@ export default function DashboardPage() {
 
   return (
     <div className={`dashboard-page${isChatOpen ? ' chat-open' : ''}`}>
+      {/* Only one of these shows, depending on screen width (Dashboard.css) */}
+      <MobileNav
+        plants={plants}
+        selectedId={selectedId}
+        onSelect={(id) => navigate(`/dashboard/${id}`)}
+        onAddPlant={() => setIsAddOpen(true)}
+        onLogout={handleLogout}
+      />
       <Sidebar
         plants={plants}
         selectedId={selectedId}
