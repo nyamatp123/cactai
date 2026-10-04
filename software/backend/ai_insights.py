@@ -14,6 +14,8 @@ CHAT_TIMEOUT_SECONDS = 30
 _executor = ThreadPoolExecutor(max_workers=4)
 
 INSTRUCTIONS_PATH = Path(__file__).parent / "cactai_instructions.md"
+# Offline cactus reference used instead of web search
+KNOWLEDGE_PATH = Path(__file__).parent / "knowledge" / "cactus-knowledge-base.md"
 CHAT_FALLBACK = "Sorry, I'm having trouble thinking right now. Please try again in a moment."
 MAX_HISTORY = 20  # most recent messages sent to Gemini
 STATS_MARKER = "[[SHOW_STATS]]"
@@ -66,6 +68,15 @@ def load_instructions():
         return "You are Cactai, a friendly cactus-care assistant. Keep answers short."
 
 
+def load_knowledge():
+    # Read on every call so edits to the knowledge base apply without a restart
+    try:
+        return KNOWLEDGE_PATH.read_text(encoding="utf-8")
+    except OSError as e:
+        print("Could not read knowledge base:", e)
+        return ""
+
+
 def format_context(context):
     lines = [f"- {key}: {value}" for key, value in (context or {}).items() if value is not None]
     if not lines:
@@ -80,9 +91,13 @@ def to_step(role, text):
 
 def get_chat_reply(message, history, context):
     """Returns {"reply": str, "show_stats": bool}."""
+    knowledge = load_knowledge()
     system_instruction = (
         load_instructions()
         + "\n" + APP_RULES
+        + ("\n## Cactus knowledge base\n\n"
+           "Use this reference for plant facts instead of searching the web. "
+           "Match the plant's type to its entry.\n\n" + knowledge if knowledge else "")
         + "\n## Current plant data (from the dashboard)\n\n"
         + format_context(context)
     )

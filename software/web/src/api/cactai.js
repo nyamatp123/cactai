@@ -2,20 +2,21 @@
 // from the browser: the API key lives only on the backend.
 
 import { API_URL } from './client';
-import { isThirsty, lightLabel } from '../pages/dashboard/plantStatus';
+import { lightLabel, moistureLabel } from '../pages/dashboard/plantStatus';
 
 function buildContext(plant, readings) {
-  const { latestMoisture: moisture, latestLux: lux, avgMoisture, avgLux } = readings ?? {};
-  const soil = moisture == null ? null : isThirsty(moisture) ? 'Dry' : 'Moist';
-  const light = lux == null ? null : lightLabel(lux);
+  const { latestMoisture: moisture, latestLux: light, avgMoisture, avgLux } = readings ?? {};
+  // Same labels as the readings card, so the reply and the card agree
+  const soil = moisture == null ? null : moistureLabel(moisture, plant?.idealRanges);
+  const lightLevel = light == null ? null : lightLabel(light);
   return {
     name: plant?.name ?? null,
-    species: plant?.species ?? null,
+    type: plant?.type ?? null, // matches an entry in the knowledge base
     moisture_percent: moisture ?? null,
-    lux: lux ?? null,
+    light_level: light ?? null, // raw sensor number, not lux
     avg_moisture_today_percent: avgMoisture ?? null,
-    avg_lux_today: avgLux ?? null,
-    health: soil && light ? `Soil ${soil}, Light ${light}` : null,
+    avg_light_level_today: avgLux ?? null,
+    health: soil && lightLevel ? `Soil ${soil}, Light ${lightLevel}` : null,
   };
 }
 

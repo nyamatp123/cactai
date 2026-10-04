@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { askCactai } from '../../api/cactai';
-import { THIRST_LINE, lightLabel } from './plantStatus';
+import { lightLabel, moistureLabel } from './plantStatus';
 
 function SparkleIcon() {
   return (
@@ -28,17 +28,10 @@ function TypingDots() {
   );
 }
 
-function moistureLabel(m) {
-  if (m < THIRST_LINE) return 'mostly dry';
-  if (m < 40) return 'comfortable';
-  if (m < 60) return 'a bit wet';
-  return 'too wet';
-}
-
 // Readings card shown under replies about the plant's condition
 function StatsCard({ stats }) {
   const rows = [];
-  if (stats.moisture != null) rows.push(['Moisture', `${stats.moisture}% · ${moistureLabel(stats.moisture)}`]);
+  if (stats.moisture != null) rows.push(['Moisture', `${stats.moisture}% · ${moistureLabel(stats.moisture, stats.ranges)}`]);
   if (stats.lux != null) rows.push(['Light', `${stats.lux} · ${lightLabel(stats.lux).toLowerCase()}`]);
   if (!rows.length) return null;
   return (
@@ -98,7 +91,11 @@ export default function CactaiChat({ plant, readings, messages, onAddMessage }) 
       const { reply, showStats } = await askCactai({ question, plant, readings, history });
       // Snapshot the readings so old cards don't change when new data arrives
       const stats = showStats
-        ? { moisture: readings?.latestMoisture ?? null, lux: readings?.latestLux ?? null }
+        ? {
+            moisture: readings?.latestMoisture ?? null,
+            lux: readings?.latestLux ?? null,
+            ranges: plant?.idealRanges ?? null,
+          }
         : null;
       onAddMessage({ role: 'cactai', text: reply, stats });
     } catch {
