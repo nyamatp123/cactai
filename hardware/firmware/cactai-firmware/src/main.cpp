@@ -2,6 +2,7 @@
 #include "motor.hpp"
 #include "SoilSensor.h"
 #include "LightSensor.h"
+#include "Display.h"
 
 constexpr uint8_t MOTOR_PIN = 26;
 
@@ -9,6 +10,7 @@ constexpr uint32_t STEP_DELAY_MS = 20;
 
 SoilSensor soil(32, 3318, 1870);  // pin, dryRaw, wetRaw
 LightSensor light;
+Display screen(5, 16, 17, 4); 
 
 void setup() {
 Serial.begin(115200);
@@ -19,6 +21,7 @@ Serial.begin(115200);
   if (!light.begin()) {
     Serial.println("BH1750 not found. Check wiring.");
   }
+  screen.begin();
 }
 
 void loop() {
@@ -46,4 +49,13 @@ void loop() {
     // Serial.print("%   lux: ");
     // Serial.println(light.readLux());
     // delay(1000);
+
+//      float moisture = soil.readPercent();
+//   float lux = light.readLux();
+//   float health = calcHealth(moisture, lux);
+
+//   Serial.printf("moisture: %.1f%%  lux: %.0f  health: %.0f\n", moisture, lux, health);
+//   screen.showDashboard(moisture, lux, health);
+
+//   delay(1000);
 }
