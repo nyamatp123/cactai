@@ -4,13 +4,11 @@ import { listPlants, createPlant } from "../../api/plants";
 import { getAccount } from "../../api/settings";
 import { logout } from "../../api/auth";
 import Sidebar from "./Sidebar";
-import StatCards from "./StatCards";
-import MoistureChart from "./MoistureChart";
-import LightChart from "./LightChart";
 import AddPlantModal from "./plants/AddPlantModal";
 import PlantView from "./plants/PlantView";
 import PlantPanel from "./PlantPanel";
-import { getStatReadings } from "../../utils/parseReadings";
+import useReadings from "../../hooks/useReadings";
+import { currentReading, averages } from "../../data/readingStats";
 import "./Dashboard.css";
 
 const RANGES = ['Day', 'Week', 'Month'];
@@ -63,7 +61,25 @@ export default function DashboardPage() {
 
   const selected = plants?.find((p) => String(p.id) === plantId);
   const selectedId = selected?.id;
-  const statReadings = useMemo(() => getStatReadings(), []);
+  // The side panel and chat always describe "now", so they use the day series
+  // whatever range the charts show
+  const { rows: panelRows, lightUnit: panelLightUnit } = useReadings({
+    plantId: selectedId,
+    plantType: selected?.type,
+    range: 'day',
+  });
+  const panelReadings = useMemo(() => {
+    if (panelRows.length === 0) return null;
+    const current = currentReading(panelRows, 'day');
+    const avg = averages(panelRows);
+    return {
+      latestMoisture: current.moisture,
+      latestLux: current.light,
+      avgMoisture: avg.moisture,
+      avgLux: avg.light,
+      lightUnit: panelLightUnit,
+    };
+  }, [panelRows, panelLightUnit]);
 
   const chatKey = selectedId;
   const chatMessages = chatHistory.get(chatKey) ?? [];
@@ -119,16 +135,12 @@ export default function DashboardPage() {
           <TimeRangeToggle value={timeRange} onChange={setTimeRange} />
         </div>
 
-        <StatCards readings={statReadings} onWaterNow={() => { /* TODO: wire to backend */ }} />
-        <MoistureChart timeRange={timeRange} />
-        <LightChart timeRange={timeRange} />
-
-        <PlantView plant={selected} />
+        <PlantView plant={selected} range={timeRange} />
       </main>
 
       <PlantPanel
         plant={selected}
-        readings={statReadings}
+        readings={panelReadings}
         isChatOpen={isChatOpen}
         onOpenChat={() => setIsChatOpen(true)}
         onCloseChat={() => setIsChatOpen(false)}

@@ -51,8 +51,8 @@ export default function PlantPanel({
   const moisture = readings?.latestMoisture ?? null;
   const lux = readings?.latestLux ?? null;
 
-  const thirsty = isThirsty(moisture);
-  const lightLevelLabel = lightLabel(lux);
+  const thirsty = isThirsty(moisture, plant?.type);
+  const lightLevelLabel = lightLabel(lux, readings?.lightUnit);
 
   const rawTip = useRotatingTip(cactusTips);
   const tip = rawTip.startsWith('Tip: ') ? rawTip.slice(5) : rawTip;

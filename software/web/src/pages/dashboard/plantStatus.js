@@ -1,15 +1,44 @@
 export const THIRST_LINE = 15;
-export const LIGHT_BRIGHT = 2500;
-export const LIGHT_MEDIUM = 1000;
 
-export function isThirsty(moisture) {
-  return moisture != null && moisture < THIRST_LINE;
+// Light thresholds per unit. "raw" is the Cactai sensor's raw value (~3000 in
+// bright light); "lux" is for the sample data, which goes up to ~90,000 lux.
+// The lux numbers are chosen starting points, not taken from the sensor.
+export const LIGHT_THRESHOLDS = {
+  raw: { bright: 2500, medium: 1000 },
+  lux: { bright: 20000, medium: 2500 },
+};
+export const LIGHT_BRIGHT = LIGHT_THRESHOLDS.raw.bright;
+export const LIGHT_MEDIUM = LIGHT_THRESHOLDS.raw.medium;
+
+// Below this moisture % a cactus of this type needs water
+const THIRST_LINE_BY_TYPE = {
+  'barrel cactus': 8,
+  'golden barrel': 8,
+  'prickly pear': 10,
+  'bunny ears cactus': 10,
+  'moon cactus': 8,
+  'old man cactus': 8,
+  'elephant cactus': 8,
+  'christmas cactus': 30,
+  'saguaro': 10,
+  'pincushion cactus': 10,
+  'thimble cactus': 10,
+  'not sure': 10,
+};
+
+export function thirstLineFor(type) {
+  return THIRST_LINE_BY_TYPE[type?.trim().toLowerCase()] ?? THIRST_LINE;
 }
 
-export function lightLabel(lux) {
-  if (lux == null) return '—';
-  if (lux > LIGHT_BRIGHT) return 'Bright';
-  if (lux > LIGHT_MEDIUM) return 'Medium';
+export function isThirsty(moisture, type) {
+  return moisture != null && moisture < thirstLineFor(type);
+}
+
+export function lightLabel(light, unit = 'raw') {
+  if (light == null) return '—';
+  const { bright, medium } = LIGHT_THRESHOLDS[unit] ?? LIGHT_THRESHOLDS.raw;
+  if (light > bright) return 'Bright';
+  if (light > medium) return 'Medium';
   return 'Low';
 }
 
@@ -25,6 +54,7 @@ export const MOISTURE_RANGES_BY_TYPE = {
   'christmas cactus': { moistureMin: 30, moistureMax: 65 },
   'saguaro': { moistureMin: 10, moistureMax: 35 },
   'pincushion cactus': { moistureMin: 10, moistureMax: 35 },
+  'thimble cactus': { moistureMin: 10, moistureMax: 35 },
   'elephant cactus': { moistureMin: 10, moistureMax: 35 },
   'not sure': { moistureMin: 10, moistureMax: 35 },
 };

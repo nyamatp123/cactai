@@ -5,7 +5,7 @@ import "./AddPlantModal.css";
 const CACTUS_TYPES = [
   "Barrel cactus", "Golden barrel", "Prickly pear", "Bunny ears cactus",
   "Moon cactus", "Old man cactus", "Christmas cactus", "Saguaro",
-  "Pincushion cactus", "Elephant cactus", "Not sure",
+  "Pincushion cactus", "Thimble cactus", "Elephant cactus", "Not sure",
 ];
 const UNITS = ["days", "weeks", "months", "years"];
 const LOCATIONS = [

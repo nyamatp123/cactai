@@ -32,7 +32,7 @@ function TypingDots() {
 function StatsCard({ stats }) {
   const rows = [];
   if (stats.moisture != null) rows.push(['Moisture', `${stats.moisture}% · ${moistureLabel(stats.moisture, stats.ranges)}`]);
-  if (stats.lux != null) rows.push(['Light', `${stats.lux} · ${lightLabel(stats.lux).toLowerCase()}`]);
+  if (stats.lux != null) rows.push(['Light', `${stats.lux} · ${lightLabel(stats.lux, stats.lightUnit).toLowerCase()}`]);
   if (!rows.length) return null;
   return (
     <dl className="chat-stats">
@@ -94,6 +94,7 @@ export default function CactaiChat({ plant, readings, messages, onAddMessage }) 
         ? {
             moisture: readings?.latestMoisture ?? null,
             lux: readings?.latestLux ?? null,
+            lightUnit: readings?.lightUnit,
             ranges: moistureRangeForType(plant?.type),
           }
         : null;

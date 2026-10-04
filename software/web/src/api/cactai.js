@@ -5,15 +5,15 @@ import { API_URL } from './client';
 import { lightLabel, moistureLabel, moistureRangeForType } from '../pages/dashboard/plantStatus';
 
 function buildContext(plant, readings) {
-  const { latestMoisture: moisture, latestLux: light, avgMoisture, avgLux } = readings ?? {};
+  const { latestMoisture: moisture, latestLux: light, avgMoisture, avgLux, lightUnit } = readings ?? {};
   // Same labels as the readings card, so the reply and the card agree
   const soil = moisture == null ? null : moistureLabel(moisture, moistureRangeForType(plant?.type));
-  const lightLevel = light == null ? null : lightLabel(light);
+  const lightLevel = light == null ? null : lightLabel(light, lightUnit);
   return {
     name: plant?.name ?? null,
     type: plant?.type ?? null, // matches an entry in the knowledge base
     moisture_percent: moisture ?? null,
-    light_level: light ?? null, // raw sensor number, not lux
+    light_level: light ?? null, // raw sensor number, or lux for sample data
     avg_moisture_today_percent: avgMoisture ?? null,
     avg_light_level_today: avgLux ?? null,
     health: soil && lightLevel ? `Soil ${soil}, Light ${lightLevel}` : null,

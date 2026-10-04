@@ -959,3 +959,12 @@
   outline-offset: 2px;
 }
 
+
+/* ---------- Sample data ---------- */
+.plant-pill.is-sample { background: #f8efc9; color: #6b5512; }
+
+.sample-note {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: #5e7266;
+}
