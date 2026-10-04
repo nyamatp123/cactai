@@ -1,16 +1,24 @@
 #include <Arduino.h>
 #include "motor.hpp"
 #include "SoilSensor.h"
+#include "LightSensor.h"
 
 constexpr uint8_t MOTOR_PIN = 26;
 
 constexpr uint32_t STEP_DELAY_MS = 20;
 
 SoilSensor soil(32, 3318, 1870);  // pin, dryRaw, wetRaw
+LightSensor light;
 
 void setup() {
 Serial.begin(115200);
-soil.begin();
+ Wire.begin(21, 22);
+ soil.begin();
+
+
+  if (!light.begin()) {
+    Serial.println("BH1750 not found. Check wiring.");
+  }
 }
 
 void loop() {
@@ -26,10 +34,16 @@ void loop() {
     //     delay(STEP_DELAY_MS);
     // } Serial.println("hrgrjhgjh");
 
-    Serial.print("raw: ");
-    Serial.print(soil.readRaw());
-    Serial.print("  moisture: ");
-    Serial.print(soil.readPercent());
-    Serial.println("%");
-    delay(1000);
+    // Serial.print("raw: ");
+    // Serial.print(soil.readRaw());
+    // Serial.print("  moisture: ");
+    // Serial.print(soil.readPercent());
+    // Serial.println("%");
+    // delay(1000);
+
+    // Serial.print("moisture: ");
+    // Serial.print(soil.readPercent());
+    // Serial.print("%   lux: ");
+    // Serial.println(light.readLux());
+    // delay(1000);
 }
