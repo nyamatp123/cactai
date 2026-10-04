@@ -1,10 +1,13 @@
 #include <Arduino.h>
+#include <esp_mac.h>  // esp_read_mac(), used by the MAC printout in setup()
 #include "motor.hpp"
 #include "SoilSensor.h"
 #include "LightSensor.h"
 #include "Display.h"
 #include "LoadCell.h"
 #include "Button.h"
+#include "Backend.h"
+#include "secrets.h"  // WiFi + backend settings; copy secrets.example.h to create it
 
 // LCD (ST7789) uses hardware VSPI: MOSI = 23, CLK = 18
 constexpr uint8_t LCD_CS_PIN  = 5;
@@ -32,11 +35,15 @@ Display screen(LCD_CS_PIN, LCD_DC_PIN, LCD_RST_PIN, LCD_BL_PIN);
 LoadCell scale(HX711_DOUT_PIN, HX711_SCK_PIN, HX711_CAL_FACTOR);
 Button button(BUTTON_PIN);
 Motor motor(MOTOR_PIN);
+Backend backend(WIFI_SSID, WIFI_PASSWORD, BACKEND_URL);
 
 constexpr uint32_t REFRESH_MS = 500;  // how often the screen + serial output update
+constexpr uint32_t UPLOAD_MS = 15UL * 60 * 1000;   // how often readings are sent to the backend
+constexpr uint32_t UPLOAD_RETRY_MS = 30UL * 1000;  // wait before retrying a failed upload
 
 SensorReadings readings = {};
 uint32_t lastRefreshMs = 0;
+uint32_t nextUploadMs = 0;  // first upload goes out as soon as WiFi connects
 
 // Serial commands for the load cell test:
 //   t        tare (remove everything from the scale first)
@@ -61,6 +68,15 @@ void handleScaleCommands() {
 
 void setup() {
 Serial.begin(115200);
+
+  // ---- Print this board's WiFi MAC address (comment out this block once you've noted it) ----
+  delay(1000);  // give the serial monitor a moment to connect so this line isn't missed
+  uint8_t mac[6];
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  Serial.printf("\n==== WiFi MAC: %02X:%02X:%02X:%02X:%02X:%02X ====\n\n",
+                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  // ---- end MAC printout ----
+
  Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
  soil.begin();
  button.begin();
@@ -78,7 +94,8 @@ Serial.begin(115200);
   scale.tare();
   readings.grams = NAN;   // shows "--" until the first load cell sample arrives
   Serial.println("Ready. Commands: t = tare, c<grams> = calibrate (e.g. c200)");
-  motor.setPWM(50);  
+  motor.setPWM(50);
+  backend.begin();
 }
 
 void loop() {
@@ -113,6 +130,12 @@ void loop() {
                     readings.buttonDown ? "DOWN" : "up", readings.buttonOn ? "ON" : "OFF",
                     (unsigned long)readings.buttonPresses, readings.health);
       screen.showSensorTest(readings);
+
+      // Signed compare so this keeps working when millis() wraps after ~49 days
+      if (backend.isConnected() && (int32_t)(millis() - nextUploadMs) >= 0) {
+        bool sent = backend.sendReadings(readings);
+        nextUploadMs = millis() + (sent ? UPLOAD_MS : UPLOAD_RETRY_MS);
+      }
     }
 
     // Constructed on first loop() call so pin setup happens after the Arduino core is initialized.

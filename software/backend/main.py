@@ -8,7 +8,7 @@ import os
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from fastapi import Depends
+from fastapi import Depends, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -94,3 +94,38 @@ def login(data: LoginData):
         algorithm="HS256",
     )
     return {"access_token": token, "token_type": "bearer"}
+
+class NewReading(BaseModel):
+    device_id: str
+    moisture: float | None = None
+    soil_raw: int | None = None
+    lux: float | None = None
+    weight_g: float | None = None
+    weight_raw: int | None = None
+    health: float | None = None
+
+# Called by the ESP32 every 15 minutes
+@app.post("/readings", status_code=201)
+def create_reading(reading: NewReading):
+    with get_connection() as conn:
+        row = conn.execute(
+            "INSERT INTO readings (device_id, moisture, soil_raw, lux, weight_g, weight_raw, health) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id, recorded_at",
+            (reading.device_id, reading.moisture, reading.soil_raw, reading.lux,
+             reading.weight_g, reading.weight_raw, reading.health),
+        ).fetchone()
+    return {"id": row[0], "recorded_at": row[1]}
+
+@app.get("/readings")
+def list_readings(device_id: str, limit: int = Query(100, ge=1, le=1000)):
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT id, recorded_at, moisture, soil_raw, lux, weight_g, weight_raw, health "
+            "FROM readings WHERE device_id = %s ORDER BY recorded_at DESC LIMIT %s",
+            (device_id, limit),
+        ).fetchall()
+    return [
+        {"id": r[0], "recorded_at": r[1], "moisture": r[2], "soil_raw": r[3], "lux": r[4],
+         "weight_g": r[5], "weight_raw": r[6], "health": r[7]}
+        for r in rows
+    ]
