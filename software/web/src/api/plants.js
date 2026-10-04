@@ -43,6 +43,10 @@ export async function listPlants() {
   return plants.map(fromApi);
 }
 
+export function deletePlant(id) {
+  return request(`/plants/${id}`, { method: "DELETE" });
+}
+
 export async function createPlant(data) {
   const plant = await request("/plants", {
     method: "POST",

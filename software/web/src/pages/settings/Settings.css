@@ -185,6 +185,18 @@
 .text-link:hover {
   text-decoration: underline;
 }
+.text-link.is-danger {
+  color: #9a3f1f;
+}
+.text-link:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.plant-error {
+  margin: 0 0 12px;
+  color: #9a3f1f;
+}
 
 /* Overview */
 .detail-grid {

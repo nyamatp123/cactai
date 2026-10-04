@@ -150,6 +150,17 @@ def list_plants(user_id: int = Depends(get_current_user_id)):
         ).fetchall()
     return [plant_row(r) for r in rows]
 
+# Readings for the plant are removed too (ON DELETE CASCADE)
+@app.delete("/plants/{plant_id}", status_code=204)
+def delete_plant(plant_id: int, user_id: int = Depends(get_current_user_id)):
+    with get_connection() as conn:
+        row = conn.execute(
+            "DELETE FROM plants WHERE id = %s AND user_id = %s RETURNING id",
+            (plant_id, user_id),
+        ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Plant not found")
+
 # ---------- Cactai chat (Gemini) ----------
 # Route lives in chat_routes.py; requires login like the routes above
 from chat_routes import router as chat_router

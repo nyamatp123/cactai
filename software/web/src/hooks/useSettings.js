@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { listPlants, createPlant, deletePlant } from "../api/plants";
 
 export const THEME_LABELS = {
   light: "Light mode",
@@ -17,13 +18,8 @@ const MOCK_USER = {
   memberSince: "2026-10-15",
 };
 
-const MOCK_PLANTS = [
-  { id: 1, name: "Spike", species: "Cactus", kind: "cactus", sensor: 1, online: true, moisture: 5, light: 2986, alertsOn: true, thirstLine: 5 },
-  { id: 2, name: "Fern", species: "Boston fern", kind: "fern", sensor: 2, online: true, moisture: 11, light: 1420, alertsOn: true, thirstLine: 30 },
-  { id: 3, name: "Aloe", species: "Aloe vera", kind: "aloe", sensor: 3, online: false, lastSeen: "2 days ago", alertsOn: false, thirstLine: 10 },
-];
-
 // "healthy" | "needs-water" | "offline"
+// Plants from the backend don't have live readings yet, so they show as offline
 export function getPlantStatus(plant) {
   if (!plant.online) return "offline";
   return plant.moisture < plant.thirstLine ? "needs-water" : "healthy";
@@ -31,7 +27,13 @@ export function getPlantStatus(plant) {
 
 export default function useSettings() {
   const [user, setUser] = useState(MOCK_USER);
-  const [plants, setPlants] = useState(MOCK_PLANTS);
+  const [plants, setPlants] = useState([]);
+
+  useEffect(() => {
+    listPlants()
+      .then(setPlants)
+      .catch((err) => console.error("Failed to load plants:", err));
+  }, []);
 
   async function updateProfile(details) {
     // TODO: PATCH /api/settings/profile with details
@@ -43,21 +45,16 @@ export default function useSettings() {
     setUser((prev) => ({ ...prev, theme }));
   }
 
-  async function addPlant(details = {}) {
-    // TODO: POST /api/plants with details, then use the id the server returns
-    const plant = {
-      id: Date.now(),
-      name: details.name ?? "New plant",
-      species: details.species ?? "Cactus",
-      kind: details.kind ?? "cactus",
-      sensor: null,
-      online: false,
-      alertsOn: true,
-      thirstLine: 15,
-      ...details,
-    };
+  // Both throw on failure so the caller can show the error
+  async function addPlant(details) {
+    const plant = await createPlant(details);
     setPlants((prev) => [...prev, plant]);
     return plant;
+  }
+
+  async function removePlant(id) {
+    await deletePlant(id);
+    setPlants((prev) => prev.filter((p) => p.id !== id));
   }
 
   async function updatePlant(id, changes) {
@@ -70,5 +67,5 @@ export default function useSettings() {
     console.log("TODO: change password", { length: newPassword.length });
   }
 
-  return { user, plants, updateProfile, updateTheme, addPlant, updatePlant, changePassword };
+  return { user, plants, updateProfile, updateTheme, addPlant, removePlant, updatePlant, changePassword };
 }
