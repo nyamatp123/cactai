@@ -611,6 +611,9 @@
 /* ---------- Plant panel: chat wrapper ---------- */
 
 .pp-chat-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
   overflow: hidden;
   max-height: 0;
   opacity: 0;
@@ -618,7 +621,10 @@
   transition: max-height 0.5s cubic-bezier(.4,0,.2,1), opacity 0.3s 0.25s;
 }
 
+/* Fill whatever height is left under the compact plant card, so the input
+   row is never cut off */
 .plant-panel.chat-open .pp-chat-wrapper {
+  flex: 1 1 0;
   max-height: calc(100vh - 120px);
   opacity: 1;
 }
@@ -640,8 +646,8 @@
 .cactai-chat {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 140px);
-  min-height: 380px;
+  flex: 1;
+  min-height: 0;
   background: #fff;
   border-radius: 16px;
   overflow: hidden;
@@ -710,7 +716,7 @@
 
 .chat-bubble {
   max-width: 88%;
-  padding: 9px 12px;
+  padding: 10px 13px;
   font-size: 13px;
   line-height: 1.5;
   color: #1F3B2D;
@@ -719,13 +725,40 @@
 .chat-bubble--user {
   background: #253B2F;
   color: #fff;
-  border-radius: 12px 12px 3px 12px;
+  border-radius: 14px;
 }
 
 .chat-bubble--cactai {
   background: #F4F7F0;
   color: #1F3B2D;
-  border-radius: 12px 12px 12px 3px;
+  border-radius: 14px;
+}
+
+/* Readings card inside a Cactai reply */
+.chat-stats {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid #DCE4D6;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.chat-stats-row dt {
+  color: #5E7266;
+}
+
+.chat-stats-row dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
 }
 
 .chat-bubble--error {
@@ -812,30 +845,41 @@
   outline-offset: 2px;
 }
 
-/* Input row */
+/* Input row: textarea and send button share one pill */
 .chat-input-row {
   flex: 0 0 auto;
+  padding: 6px 10px 12px;
+}
+
+.chat-input-pill {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  padding: 8px 10px 10px;
-  border-top: 1px solid #E6EBE2;
+  padding: 4px 4px 4px 14px;
+  border: 1px solid #D5DED0;
+  border-radius: 22px;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.chat-input-pill:focus-within {
+  border-color: #3F7A55;
+  box-shadow: 0 0 0 3px #E3EFE7;
 }
 
 .chat-textarea {
   flex: 1;
   min-width: 0;
+  align-self: center;
   resize: none;
-  border: 1px solid #D5DED0;
-  border-radius: 16px;
-  padding: 8px 12px;
+  border: none;
+  padding: 6px 0;
   font-size: 12px;
   font-family: inherit;
   color: #1F3B2D;
   background: #fff;
   line-height: 1.45;
   overflow-y: auto;
-  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .chat-textarea::placeholder {
@@ -844,8 +888,6 @@
 
 .chat-textarea:focus {
   outline: none;
-  border-color: #3F7A55;
-  box-shadow: 0 0 0 3px #E3EFE7;
 }
 
 .chat-textarea:disabled {

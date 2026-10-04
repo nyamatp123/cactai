@@ -133,3 +133,8 @@ def list_plants(user_id: int = Depends(get_current_user_id)):
             (user_id,)
         ).fetchall()
     return [{"id": r[0], "name": r[1], "species": r[2]} for r in rows]
+
+# ---------- Cactai chat (Gemini) ----------
+# Route lives in chat_routes.py; requires login like the routes above
+from chat_routes import router as chat_router
+app.include_router(chat_router, dependencies=[Depends(get_current_user_id)])
