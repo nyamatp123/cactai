@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { listPlants, createPlant } from "../../api/plants";
 import Sidebar from "./Sidebar";
 import StatCards from "./StatCards";
 import MoistureChart from "./MoistureChart";
@@ -45,6 +46,15 @@ export default function DashboardPage() {
   // Per-plant chat history: Map<plantId, { id, role, text }[]>
   const [chatHistory, setChatHistory] = useState(() => new Map());
 
+  useEffect(() => {
+    listPlants()
+      .then((list) => {
+        setPlants(list);
+        setSelectedId((id) => id ?? list[0]?.id);
+      })
+      .catch((err) => console.error("Failed to load plants:", err));
+  }, []);
+
   const selected = plants.find((p) => p.id === selectedId);
   const statReadings = useMemo(() => getStatReadings(), []);
 
@@ -61,8 +71,9 @@ export default function DashboardPage() {
     });
   }
 
-  function handleAddPlant(data) {
-    const plant = { id: crypto.randomUUID(), ...data, readings: null };
+  // Throws on failure so the modal can stay open and show the error
+  async function handleAddPlant(data) {
+    const plant = await createPlant(data);
     setPlants((prev) => [...prev, plant]);
     setSelectedId(plant.id);
     setIsAddOpen(false);

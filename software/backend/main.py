@@ -114,25 +114,41 @@ def me(user_id: int = Depends(get_current_user_id)):
 class NewPlant(BaseModel):
     name: str
     species: str | None = None
+    device_id: str | None = None  # optional until ESP32 pairing is set up
+    location: str | None = None
+    drainage: bool | None = None
+    acquired_at: datetime | None = None
+
+PLANT_COLUMNS = "id, name, species, device_id, location, drainage, acquired_at"
+
+def plant_row(r):
+    return {
+        "id": r[0], "name": r[1], "species": r[2], "device_id": r[3],
+        "location": r[4], "drainage": r[5], "acquired_at": r[6],
+    }
 
 @app.post("/plants", status_code=201)
 def create_plant(plant: NewPlant, user_id: int = Depends(get_current_user_id)):
-    with get_connection() as conn:
-        row = conn.execute(
-            "INSERT INTO plants (user_id, name, species) "
-            "VALUES (%s, %s, %s) RETURNING id, user_id, name, species",
-            (user_id, plant.name, plant.species),
-        ).fetchone()
-    return {"id": row[0], "user_id": row[1], "name": row[2], "species": row[3]}
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "INSERT INTO plants (user_id, name, species, device_id, location, drainage, acquired_at) "
+                f"VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING {PLANT_COLUMNS}",
+                (user_id, plant.name, plant.species, plant.device_id,
+                 plant.location, plant.drainage, plant.acquired_at),
+            ).fetchone()
+    except psycopg.errors.UniqueViolation:
+        raise HTTPException(status_code=409, detail="That device is already paired to a plant")
+    return plant_row(row)
 
 @app.get("/plants")
 def list_plants(user_id: int = Depends(get_current_user_id)):
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT id, name, species FROM plants WHERE user_id = %s ORDER BY id",
+            f"SELECT {PLANT_COLUMNS} FROM plants WHERE user_id = %s ORDER BY id",
             (user_id,)
         ).fetchall()
-    return [{"id": r[0], "name": r[1], "species": r[2]} for r in rows]
+    return [plant_row(r) for r in rows]
 
 # ---------- Cactai chat (Gemini) ----------
 # Route lives in chat_routes.py; requires login like the routes above

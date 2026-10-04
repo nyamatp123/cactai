@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { askCactai } from '../../api/cactai';
-import { lightLabel, moistureLabel } from './plantStatus';
+import { lightLabel, moistureLabel, moistureRangeForType } from './plantStatus';
 
 function SparkleIcon() {
   return (
@@ -94,7 +94,7 @@ export default function CactaiChat({ plant, readings, messages, onAddMessage }) 
         ? {
             moisture: readings?.latestMoisture ?? null,
             lux: readings?.latestLux ?? null,
-            ranges: plant?.idealRanges ?? null,
+            ranges: moistureRangeForType(plant?.type),
           }
         : null;
       onAddMessage({ role: 'cactai', text: reply, stats });
