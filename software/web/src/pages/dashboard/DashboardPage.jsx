@@ -41,9 +41,24 @@ export default function DashboardPage() {
   const [selectedId, setSelectedId] = useState(initialPlants[0]?.id);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [timeRange, setTimeRange] = useState('day');
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  // Per-plant chat history: Map<plantId, { id, role, text }[]>
+  const [chatHistory, setChatHistory] = useState(() => new Map());
 
   const selected = plants.find((p) => p.id === selectedId);
   const statReadings = useMemo(() => getStatReadings(), []);
+
+  const chatMessages = chatHistory.get(selectedId) ?? [];
+
+  function handleAddMessage(msg) {
+    if (!selectedId) return;
+    setChatHistory(prev => {
+      const next = new Map(prev);
+      const existing = next.get(selectedId) ?? [];
+      next.set(selectedId, [...existing, { ...msg, id: crypto.randomUUID() }]);
+      return next;
+    });
+  }
 
   function handleAddPlant(data) {
     const plant = { id: crypto.randomUUID(), ...data, readings: null };
@@ -80,7 +95,11 @@ export default function DashboardPage() {
       <PlantPanel
         plant={selected}
         readings={statReadings}
-        onAskCactai={() => { /* TODO: chat panel not built yet */ }}
+        isChatOpen={isChatOpen}
+        onOpenChat={() => setIsChatOpen(true)}
+        onCloseChat={() => setIsChatOpen(false)}
+        chatMessages={chatMessages}
+        onAddMessage={handleAddMessage}
       />
 
       {isAddOpen && (
