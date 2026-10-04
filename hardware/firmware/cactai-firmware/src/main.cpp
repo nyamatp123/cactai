@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <esp_mac.h>  // esp_read_mac(), used by the MAC printout in setup()
 #include "motor.hpp"
+#include "MotorControl.h"
 #include "SoilSensor.h"
 #include "LightSensor.h"
 #include "Display.h"
@@ -27,7 +28,7 @@ constexpr uint8_t MOTOR_PIN    = 26;
 
 constexpr uint32_t STEP_DELAY_MS = 20;
 
-constexpr float HX711_CAL_FACTOR = 1.0f;  // counts per gram; replace with the value printed by the 'c' command
+constexpr float HX711_CAL_FACTOR = 2260.6331f;  // counts per gram; replace with the value printed by the 'c' command
 
 SoilSensor soil(MOISTURE_PIN, 3318, 1870);  // pin, dryRaw, wetRaw
 LightSensor light;
@@ -35,24 +36,36 @@ Display screen(LCD_CS_PIN, LCD_DC_PIN, LCD_RST_PIN, LCD_BL_PIN);
 LoadCell scale(HX711_DOUT_PIN, HX711_SCK_PIN, HX711_CAL_FACTOR);
 Button button(BUTTON_PIN);
 Motor motor(MOTOR_PIN);
-Backend backend(WIFI_SSID, WIFI_PASSWORD, BACKEND_URL);
+MotorControl pump(motor);
+Backend backend(WIFI_SSID, WIFI_PASSWORD, BACKEND_URL, DEVICE_KEY);
 
 constexpr uint32_t REFRESH_MS = 500;  // how often the screen + serial output update
-constexpr uint32_t UPLOAD_MS = 15UL * 60 * 1000;   // how often readings are sent to the backend
-constexpr uint32_t UPLOAD_RETRY_MS = 30UL * 1000;  // wait before retrying a failed upload
+// Upload interval, retry delay and DRY_RUN are at the top of Backend.cpp
 
 SensorReadings readings = {};
 uint32_t lastRefreshMs = 0;
-uint32_t nextUploadMs = 0;  // first upload goes out as soon as WiFi connects
 
-// Serial commands for the load cell test:
+// Serial commands for testing:
 //   t        tare (remove everything from the scale first)
 //   c<grams> calibrate with a known weight on the scale, e.g. "c200"
-void handleScaleCommands() {
+//   w<ml>    water the pot, e.g. "w100"
+//   x        stop watering
+void handleSerialCommands() {
   if (!Serial.available()) return;
 
   char cmd = Serial.read();
-  if (cmd == 't') {
+  if (cmd == 'x') {
+    pump.cancel();
+    return;
+  }
+  if (pump.isBusy() && (cmd == 't' || cmd == 'c' || cmd == 'w')) {
+    Serial.println("Pump running, send x to stop it first.");
+    return;
+  }
+
+  if (cmd == 'w') {
+    pump.start(Serial.parseFloat());
+  } else if (cmd == 't') {
     scale.tare();
     Serial.println("Tared.");
   } else if (cmd == 'c') {
@@ -93,8 +106,7 @@ Serial.begin(115200);
   Serial.println("Taring... keep the scale empty.");
   scale.tare();
   readings.grams = NAN;   // shows "--" until the first load cell sample arrives
-  Serial.println("Ready. Commands: t = tare, c<grams> = calibrate (e.g. c200)");
-  motor.setPWM(50);
+  Serial.println("Ready. Commands: t = tare, c<grams> = calibrate (e.g. c200), w<ml> = water (e.g. w100), x = stop");
   backend.begin();
 }
 
@@ -105,13 +117,15 @@ void loop() {
       readings.buttonPresses++;
       Serial.printf("Button pressed (%lu total)\n", (unsigned long)readings.buttonPresses);
     }
-    handleScaleCommands();
+    handleSerialCommands();
 
     // Only take a load cell sample when one is waiting, so the HX711 never stalls the loop
     if (scale.isReady()) {
       readings.weightRaw = scale.readRaw(1);
       readings.grams = scale.rawToGrams(readings.weightRaw);
+      pump.addSample(readings.grams);
     }
+    pump.update();
 
     // Slow part: read the other sensors and redraw every REFRESH_MS
     if (millis() - lastRefreshMs >= REFRESH_MS) {
@@ -131,11 +145,10 @@ void loop() {
                     (unsigned long)readings.buttonPresses, readings.health);
       screen.showSensorTest(readings);
 
-      // Signed compare so this keeps working when millis() wraps after ~49 days
-      if (backend.isConnected() && (int32_t)(millis() - nextUploadMs) >= 0) {
-        bool sent = backend.sendReadings(readings);
-        nextUploadMs = millis() + (sent ? UPLOAD_MS : UPLOAD_RETRY_MS);
-      }
+      // Keeps WiFi up and uploads when due. Paused while watering, because a slow HTTP request blocks
+      // the loop for up to ~13 s and the pump would keep running unchecked the whole time.
+      // An upload that comes due while watering goes out on the first refresh after the dose ends.
+      if (!pump.isBusy()) backend.update(readings);
     }
 
     // Constructed on first loop() call so pin setup happens after the Arduino core is initialized.

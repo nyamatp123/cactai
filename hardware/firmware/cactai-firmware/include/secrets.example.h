@@ -6,6 +6,10 @@
 #define WIFI_SSID     "your-wifi-name"
 #define WIFI_PASSWORD "your-wifi-password"
 
+// Base URL only: Backend.cpp adds "/readings" itself.
 // Your computer's LAN IP (run `ipconfig` and use the IPv4 address), not localhost.
 // The backend must be started with --host 0.0.0.0 to be reachable from the ESP32.
 #define BACKEND_URL   "http://192.168.1.100:8000"
+
+// Must match DEVICE_KEY in the backend's environment; sent as the X-Device-Key header
+#define DEVICE_KEY    "your-device-key"
