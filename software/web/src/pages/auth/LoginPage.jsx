@@ -2,18 +2,28 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "./AuthLayout";
 import { GoogleIcon } from "./AuthArt";
+import { login } from "../../api/auth";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    // TODO: validate input
-    // TODO: call login API with { email, password } and store session
-    navigate("/dashboard");
+    setError("");
+    setLoading(true);
+    try {
+      await login({ email, password });
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleGoogle() {
@@ -62,7 +72,11 @@ export default function LoginPage() {
               <Link to="/forgot-password" className="login__link">Forgot password?</Link>
             </div>
 
-            <button type="submit" className="login__submit">Log in</button>
+            {error && <p className="login__error" role="alert">{error}</p>}
+
+            <button type="submit" className="login__submit" disabled={loading}>
+              {loading ? "Logging in…" : "Log in"}
+            </button>
           </form>
 
           <div className="login__divider"><span>or</span></div>
