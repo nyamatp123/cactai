@@ -1,22 +1,188 @@
 #include <Arduino.h>
+#include <esp_mac.h>  // esp_read_mac(), used by the MAC printout in setup()
 #include "motor.hpp"
+#include "MotorControl.h"
+#include "SoilSensor.h"
+#include "LightSensor.h"
+#include "Display.h"
+#include "LoadCell.h"
+#include "Button.h"
+#include "Backend.h"
+#include "secrets.h"  // WiFi + backend settings; copy secrets.example.h to create it
 
-constexpr uint8_t MOTOR_PIN = 26;
+// LCD (ST7789) uses hardware VSPI: MOSI = 23, CLK = 18
+constexpr uint8_t LCD_CS_PIN  = 5;
+constexpr uint8_t LCD_DC_PIN  = 16;
+constexpr uint8_t LCD_RST_PIN = 17;
+constexpr uint8_t LCD_BL_PIN  = 4;
+
+constexpr uint8_t I2C_SDA_PIN = 21;  // BH1750
+constexpr uint8_t I2C_SCL_PIN = 22;
+
+constexpr uint8_t HX711_DOUT_PIN = 35;
+constexpr uint8_t HX711_SCK_PIN  = 32;
+
+constexpr uint8_t MOISTURE_PIN = 34;
+constexpr uint8_t BUTTON_PIN   = 27;
+constexpr uint8_t MOTOR_PIN    = 26;
+
 constexpr uint32_t STEP_DELAY_MS = 20;
 
+constexpr float HX711_CAL_FACTOR = 2260.6331f;  // counts per gram; replace with the value printed by the 'c' command
+
+SoilSensor soil(MOISTURE_PIN, 3318, 1870);  // pin, dryRaw, wetRaw
+LightSensor light;
+Display screen(LCD_CS_PIN, LCD_DC_PIN, LCD_RST_PIN, LCD_BL_PIN);
+LoadCell scale(HX711_DOUT_PIN, HX711_SCK_PIN, HX711_CAL_FACTOR);
+Button button(BUTTON_PIN);
+Motor motor(MOTOR_PIN);
+MotorControl pump(motor);
+Backend backend(WIFI_SSID, WIFI_PASSWORD, BACKEND_URL, DEVICE_KEY);
+
+constexpr uint32_t REFRESH_MS = 500;  // how often the screen + serial output update
+// Upload interval, retry delay and DRY_RUN are at the top of Backend.cpp
+
+SensorReadings readings = {};
+uint32_t lastRefreshMs = 0;
+
+// Serial commands for testing:
+//   t        tare (remove everything from the scale first)
+//   c<grams> calibrate with a known weight on the scale, e.g. "c200"
+//   w<ml>    water the pot, e.g. "w100"
+//   x        stop watering
+void handleSerialCommands() {
+  if (!Serial.available()) return;
+
+  char cmd = Serial.read();
+  if (cmd == 'x') {
+    pump.cancel();
+    return;
+  }
+  if (pump.isBusy() && (cmd == 't' || cmd == 'c' || cmd == 'w')) {
+    Serial.println("Pump running, send x to stop it first.");
+    return;
+  }
+
+  if (cmd == 'w') {
+    pump.start(Serial.parseFloat());
+  } else if (cmd == 't') {
+    scale.tare();
+    Serial.println("Tared.");
+  } else if (cmd == 'c') {
+    float knownGrams = Serial.parseFloat();
+    if (knownGrams <= 0) {
+      Serial.println("Usage: c<grams>, e.g. c200");
+      return;
+    }
+    float factor = scale.calibrate(knownGrams);
+    Serial.printf("Calibrated. HX711_CAL_FACTOR = %.4f\n", factor);
+  }
+}
+
 void setup() {
+Serial.begin(115200);
+
+  // ---- Print this board's WiFi MAC address (comment out this block once you've noted it) ----
+  delay(1000);  // give the serial monitor a moment to connect so this line isn't missed
+  uint8_t mac[6];
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
+  Serial.printf("\n==== WiFi MAC: %02X:%02X:%02X:%02X:%02X:%02X ====\n\n",
+                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  // ---- end MAC printout ----
+
+ Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+ soil.begin();
+ button.begin();
+
+
+  if (!light.begin()) {
+    Serial.println("BH1750 not found. Check wiring.");
+  }
+  screen.begin();
+
+  if (!scale.begin()) {
+    Serial.println("HX711 not found. Check wiring.");
+  }
+  Serial.println("Taring... keep the scale empty.");
+  scale.tare();
+  readings.grams = NAN;   // shows "--" until the first load cell sample arrives
+  Serial.println("Ready. Commands: t = tare, c<grams> = calibrate (e.g. c200), w<ml> = water (e.g. w100), x = stop");
+  backend.begin();
 }
 
 void loop() {
-    // Constructed on first loop() call so pin setup happens after the Arduino core is initialized.
-    static Motor motor(MOTOR_PIN);
+    // Fast part: runs every pass so button presses aren't missed
+    button.update();
+    if (button.wasPressed()) {
+      readings.buttonPresses++;
+      Serial.printf("Button pressed (%lu total)\n", (unsigned long)readings.buttonPresses);
+    }
+    handleSerialCommands();
 
-    for (uint8_t pwm = 0; pwm <= 100; pwm++) {
-        motor.setPWM(pwm);
-        delay(STEP_DELAY_MS);
+    // Only take a load cell sample when one is waiting, so the HX711 never stalls the loop
+    if (scale.isReady()) {
+      readings.weightRaw = scale.readRaw(1);
+      readings.grams = scale.rawToGrams(readings.weightRaw);
+      pump.addSample(readings.grams);
     }
-    for (int pwm = 100; pwm >= 0; pwm--) {
-        motor.setPWM(pwm);
-        delay(STEP_DELAY_MS);
+    pump.update();
+
+    // Slow part: read the other sensors and redraw every REFRESH_MS
+    if (millis() - lastRefreshMs >= REFRESH_MS) {
+      lastRefreshMs = millis();
+
+      readings.soilRaw = soil.readRaw();
+      readings.moisture = soil.readPercent();
+      readings.lux = light.readLux();
+      readings.buttonDown = button.isPressed();
+      readings.buttonOn = button.isOn();
+      readings.health = calcHealth(readings.moisture, readings.lux);
+
+      Serial.printf("soil: %.0f%% (raw %d) | light: %.0f lux | weight: %.1f g (raw %ld) | button: %s %s x%lu | health: %.0f%%\n",
+                    readings.moisture, readings.soilRaw, readings.lux,
+                    readings.grams, readings.weightRaw,
+                    readings.buttonDown ? "DOWN" : "up", readings.buttonOn ? "ON" : "OFF",
+                    (unsigned long)readings.buttonPresses, readings.health);
+      screen.showSensorTest(readings);
+
+      // Keeps WiFi up and uploads when due. Paused while watering, because a slow HTTP request blocks
+      // the loop for up to ~13 s and the pump would keep running unchecked the whole time.
+      // An upload that comes due while watering goes out on the first refresh after the dose ends.
+      if (!pump.isBusy()) backend.update(readings);
     }
+
+    // Constructed on first loop() call so pin setup happens after the Arduino core is initialized.
+    // static Motor motor(MOTOR_PIN);
+
+    // for (uint8_t pwm = 0; pwm <= 100; pwm++) {
+    //     motor.setPWM(pwm);
+    //     delay(STEP_DELAY_MS);
+    // }
+    // for (int pwm = 100; pwm >= 0; pwm--) {
+    //     motor.setPWM(pwm);
+    //     delay(STEP_DELAY_MS);
+    // } Serial.println("hrgrjhgjh");
+
+    // Serial.print("raw: ");
+    // Serial.print(soil.readRaw());
+    // Serial.print("  moisture: ");
+    // Serial.print(soil.readPercent());
+    // Serial.println("%");
+    // delay(1000);
+
+    // Serial.print("moisture: ");
+    // Serial.print(soil.readPercent());
+    // Serial.print("%   lux: ");
+    // Serial.println(light.readLux());
+    // delay(1000);
+
+//   float moisture = soil.readPercent();
+//   float lux = light.readLux();
+//   float health = calcHealth(moisture, lux);
+
+//   Serial.printf("moisture: %.1f%%  lux: %.0f  health: %.0f\n", moisture, lux, health);
+//   screen.showDashboard(moisture, lux, health);
+
+//   delay(1000);
 }
+

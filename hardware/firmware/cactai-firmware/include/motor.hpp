@@ -11,6 +11,7 @@ public:
     void setPWM(uint8_t percent);
 
 private:
+    static constexpr uint8_t PWM_CHANNEL = 0;
     static constexpr uint32_t PWM_FREQ_HZ = 8000;
     static constexpr uint8_t PWM_RESOLUTION_BITS = 10;
     static constexpr uint32_t PWM_MAX_DUTY = (1 << PWM_RESOLUTION_BITS) - 1;
