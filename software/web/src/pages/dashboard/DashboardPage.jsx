@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { listPlants, createPlant } from "../../api/plants";
 import { getAccount } from "../../api/settings";
+import { logout } from "../../api/auth";
 import Sidebar from "./Sidebar";
 import StatCards from "./StatCards";
 import MoistureChart from "./MoistureChart";
@@ -84,6 +85,16 @@ export default function DashboardPage() {
     navigate(`/dashboard/${plant.id}`);
   }
 
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch (err) {
+      // Still leave the page; the cookie may already be gone
+      console.error("Logout failed:", err);
+    }
+    navigate("/login", { replace: true });
+  }
+
   if (loadError) return <p style={{ padding: 24 }}>{loadError}</p>;
   if (plants === null) return null; // loading
   if (plants.length === 0) return <Navigate to="/welcome" replace />;
@@ -123,6 +134,7 @@ export default function DashboardPage() {
         onCloseChat={() => setIsChatOpen(false)}
         chatMessages={chatMessages}
         onAddMessage={handleAddMessage}
+        onLogout={handleLogout}
       />
 
       {isAddOpen && (

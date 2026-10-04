@@ -28,6 +28,11 @@
 /* ---------- Sidebar rail ---------- */
 .dash-sidebar {
   flex: 0 0 76px;
+  /* Pinned to the screen so the settings icon sits at the bottom of the view */
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -384,9 +389,33 @@
   gap: 0;
   /* top padding matches dash-main (24px) + header height (~58px) + header margin (20px) */
   padding: 102px 16px 16px 0;
+  /* Stays in view while the main column scrolls */
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
   height: 100vh;
   overflow-y: auto;
   transition: flex-basis 0.5s cubic-bezier(.4,0,.2,1);
+}
+
+/* Sits in the empty space above the plant card */
+.pp-logout {
+  position: absolute;
+  top: 24px;
+  right: 16px;
+  padding: 8px 16px;
+  border: 1px solid #f1c9bd;
+  border-radius: 999px;
+  background: #fbe4dd;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #a5402a;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.pp-logout:hover {
+  background: #f7d3c8;
 }
 
 .dashboard-page.chat-open .plant-panel {

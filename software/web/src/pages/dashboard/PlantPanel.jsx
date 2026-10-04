@@ -46,6 +46,7 @@ export default function PlantPanel({
   onCloseChat,
   chatMessages,
   onAddMessage,
+  onLogout,
 }) {
   const moisture = readings?.latestMoisture ?? null;
   const lux = readings?.latestLux ?? null;
@@ -77,6 +78,9 @@ export default function PlantPanel({
 
   return (
     <aside className={`plant-panel${isChatOpen ? ' chat-open' : ''}`}>
+      <button type="button" className="pp-logout" onClick={onLogout}>
+        Log out
+      </button>
 
       {/* 1. Plant card — expanded + compact states both always mounted */}
       <div className="pp-card pp-plant-card">
