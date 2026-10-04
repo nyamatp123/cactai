@@ -14,6 +14,11 @@ import "./Dashboard.css";
 
 const RANGES = ['Day', 'Week', 'Month'];
 
+// Date -> "14:03:27"
+function clockTime(d) {
+  return [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2, '0')).join(':');
+}
+
 function TimeRangeToggle({ value, onChange }) {
   const idx = RANGES.findIndex(r => r.toLowerCase() === value);
   return (
@@ -64,7 +69,9 @@ export default function DashboardPage() {
   const selectedId = selected?.id;
   // The side panel and chat always describe "now", so they use the day series
   // whatever range the charts show
-  const { rows: panelRows, lightUnit: panelLightUnit, source: panelSource } = useReadings({
+  const {
+    rows: panelRows, lightUnit: panelLightUnit, source: panelSource, updatedAt,
+  } = useReadings({
     plantId: selectedId,
     plantType: selected?.type,
     range: 'day',
@@ -139,7 +146,7 @@ export default function DashboardPage() {
         <div className="dash-header">
           <div className="dash-greeting">
             <h1>{firstName === null ? 'Hi' : firstName ? `Hi, ${firstName}` : 'Hi there'}</h1>
-            <p>Updated just now</p>
+            <p>Updated {updatedAt ? clockTime(updatedAt) : '—'}</p>
           </div>
           <TimeRangeToggle value={timeRange} onChange={setTimeRange} />
         </div>

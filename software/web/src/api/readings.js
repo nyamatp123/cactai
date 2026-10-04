@@ -10,7 +10,7 @@ import { getSampleSeries } from '../data/sample';
 import { mergeDay, mergeWeek } from '../data/mergeReadings';
 
 const MODES = ['sample', 'hybrid', 'sensor'];
-const DATA_MODE = MODES.includes(import.meta.env.VITE_DATA_MODE)
+export const DATA_MODE = MODES.includes(import.meta.env.VITE_DATA_MODE)
   ? import.meta.env.VITE_DATA_MODE
   : 'hybrid';
 

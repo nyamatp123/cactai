@@ -356,9 +356,9 @@ def plant_readings(
             raise HTTPException(status_code=404, detail="Plant not found")
 
         if range_ == "day":
-            # Last 24 hours in 15-minute buckets
+            # Last 24 hours in 5-minute buckets (BUCKET_MINUTES in web/src/data/mergeReadings.js)
             rows = conn.execute(
-                "SELECT date_bin('15 minutes', recorded_at, TIMESTAMPTZ '2000-01-01') AS t, "
+                "SELECT date_bin('5 minutes', recorded_at, TIMESTAMPTZ '2000-01-01') AS t, "
                 "AVG(moisture_pct), AVG(lux), AVG(weight_g), AVG(health_score) "
                 "FROM sensor_readings "
                 "WHERE plant_id = %s AND recorded_at >= now() - INTERVAL '24 hours' "
