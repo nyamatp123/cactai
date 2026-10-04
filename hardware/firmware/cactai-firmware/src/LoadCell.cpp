@@ -13,6 +13,10 @@ bool LoadCell::begin() {
 
 // The library's read functions block forever if the HX711 is unplugged,
 // so check it's ready (with a timeout) before every read.
+bool LoadCell::isReady() {
+  return _scale.is_ready();
+}
+
 bool LoadCell::waitReady() {
   return _scale.wait_ready_timeout(READY_TIMEOUT_MS);
 }
@@ -30,6 +34,10 @@ long LoadCell::readRaw(uint8_t samples) {
 float LoadCell::readGrams(uint8_t samples) {
   if (!waitReady()) return NAN;
   return _scale.get_units(samples);  // (raw - tare offset) / calFactor
+}
+
+float LoadCell::rawToGrams(long raw) {
+  return (raw - _scale.get_offset()) / _calFactor;
 }
 
 float LoadCell::calibrate(float knownGrams, uint8_t samples) {

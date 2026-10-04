@@ -81,3 +81,55 @@ void Display::showDashboard(float moisture, float lux, float health) {
   _tft.setCursor(10, 205);
   _tft.print(buf);
 }
+
+// Text size 2 = 12 x 16 px per character, so 25 characters fit across 320 px
+#define TEST_ROW_Y0     50
+#define TEST_ROW_HEIGHT 28
+#define TEST_ROW_CHARS  25
+
+void Display::printRow(uint8_t row, uint16_t color, const char* text) {
+  char padded[TEST_ROW_CHARS + 1];
+  snprintf(padded, sizeof(padded), "%-25s", text);  // pad so old text gets wiped
+  _tft.setTextSize(2);
+  _tft.setTextColor(color, ST77XX_BLACK);
+  _tft.setCursor(10, TEST_ROW_Y0 + row * TEST_ROW_HEIGHT);
+  _tft.print(padded);
+}
+
+void Display::showSensorTest(const SensorReadings& r) {
+  if (!_testTitleDrawn) {
+    _tft.fillScreen(ST77XX_BLACK);
+    _tft.setTextSize(3);
+    _tft.setTextColor(ST77XX_CYAN, ST77XX_BLACK);
+    _tft.setCursor(10, 10);
+    _tft.print("SENSOR TEST");
+    _testTitleDrawn = true;
+    _lastMood = -1;   // dashboard face needs a full redraw if we switch back
+  }
+
+  char buf[32];
+
+  snprintf(buf, sizeof(buf), "Soil   %3.0f%%  raw %4d", r.moisture, r.soilRaw);
+  printRow(0, ST77XX_GREEN, buf);
+
+  if (r.lux < 0) snprintf(buf, sizeof(buf), "Light  ERROR");
+  else           snprintf(buf, sizeof(buf), "Light  %.0f lux", r.lux);
+  printRow(1, ST77XX_YELLOW, buf);
+
+  if (isnan(r.grams)) snprintf(buf, sizeof(buf), "Weight --");
+  else                snprintf(buf, sizeof(buf), "Weight %.1f g", r.grams);
+  printRow(2, ST77XX_WHITE, buf);
+
+  snprintf(buf, sizeof(buf), "  raw  %ld", r.weightRaw);
+  printRow(3, ST77XX_WHITE, buf);
+
+  snprintf(buf, sizeof(buf), "Button %-4s %-3s x%lu",
+           r.buttonDown ? "DOWN" : "up", r.buttonOn ? "ON" : "OFF", (unsigned long)r.buttonPresses);
+  printRow(4, ST77XX_MAGENTA, buf);
+
+  snprintf(buf, sizeof(buf), "Health %3.0f%%", r.health);
+  printRow(5, ST77XX_CYAN, buf);
+
+  snprintf(buf, sizeof(buf), "up %lus", (unsigned long)(millis() / 1000));
+  printRow(6, ST77XX_BLUE, buf);
+}

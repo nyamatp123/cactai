@@ -31,6 +31,12 @@ LightSensor light;
 Display screen(LCD_CS_PIN, LCD_DC_PIN, LCD_RST_PIN, LCD_BL_PIN);
 LoadCell scale(HX711_DOUT_PIN, HX711_SCK_PIN, HX711_CAL_FACTOR);
 Button button(BUTTON_PIN);
+Motor motor(MOTOR_PIN);
+
+constexpr uint32_t REFRESH_MS = 500;  // how often the screen + serial output update
+
+SensorReadings readings = {};
+uint32_t lastRefreshMs = 0;
 
 // Serial commands for the load cell test:
 //   t        tare (remove everything from the scale first)
@@ -70,21 +76,44 @@ Serial.begin(115200);
   }
   Serial.println("Taring... keep the scale empty.");
   scale.tare();
+  readings.grams = NAN;   // shows "--" until the first load cell sample arrives
   Serial.println("Ready. Commands: t = tare, c<grams> = calibrate (e.g. c200)");
+  motor.setPWM(50);  
 }
 
 void loop() {
+    // Fast part: runs every pass so button presses aren't missed
     button.update();
+    if (button.wasPressed()) {
+      readings.buttonPresses++;
+      Serial.printf("Button pressed (%lu total)\n", (unsigned long)readings.buttonPresses);
+    }
     handleScaleCommands();
 
-    long raw = scale.readRaw();
-    float grams = scale.readGrams();
-    if (isnan(grams)) {
-      Serial.println("HX711 read failed.");
-    } else {
-      Serial.printf("raw: %ld  weight: %.1f g\n", raw, grams);
+    // Only take a load cell sample when one is waiting, so the HX711 never stalls the loop
+    if (scale.isReady()) {
+      readings.weightRaw = scale.readRaw(1);
+      readings.grams = scale.rawToGrams(readings.weightRaw);
     }
-    delay(200);
+
+    // Slow part: read the other sensors and redraw every REFRESH_MS
+    if (millis() - lastRefreshMs >= REFRESH_MS) {
+      lastRefreshMs = millis();
+
+      readings.soilRaw = soil.readRaw();
+      readings.moisture = soil.readPercent();
+      readings.lux = light.readLux();
+      readings.buttonDown = button.isPressed();
+      readings.buttonOn = button.isOn();
+      readings.health = calcHealth(readings.moisture, readings.lux);
+
+      Serial.printf("soil: %.0f%% (raw %d) | light: %.0f lux | weight: %.1f g (raw %ld) | button: %s %s x%lu | health: %.0f%%\n",
+                    readings.moisture, readings.soilRaw, readings.lux,
+                    readings.grams, readings.weightRaw,
+                    readings.buttonDown ? "DOWN" : "up", readings.buttonOn ? "ON" : "OFF",
+                    (unsigned long)readings.buttonPresses, readings.health);
+      screen.showSensorTest(readings);
+    }
 
     // Constructed on first loop() call so pin setup happens after the Arduino core is initialized.
     // static Motor motor(MOTOR_PIN);
