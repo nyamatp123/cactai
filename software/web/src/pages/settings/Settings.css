@@ -1,24 +1,8 @@
 .settings-page {
-  --forest: #253a31;
-  --green: #2f6b4a;
-  --green-hover: #265a3d;
-  --ink: #1f3329;
-  --muted: #5f7268;
-  --faint: #8a9a90;
-  --border: #dfe6e0;
-  --panel: #f4f7f2;
-  --sage: #dde8d9;
-  --mint: #e3eee6;
-  --peach: #fbe7dd;
-  --butter: #f6edc6;
-  --rust: #8c2f1d;
-
-  /* Keep native inputs/selects light even when the OS is in dark mode. */
-  color-scheme: light;
   flex: 1;
   display: flex;
   min-height: 100vh;
-  background: #fff;
+  background: var(--surface);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.45;
@@ -34,11 +18,11 @@
 }
 
 .settings-card {
-  flex: 1;
-  width: 100%;
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  background: #fff;
+    flex: 1;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    background: var(--surface);
 }
 
 /* ---------- Sidebar ---------- */
@@ -64,15 +48,15 @@
   padding: 0 8px;
 }
 .avatar {
-  width: 88px;
-  height: 88px;
-  display: grid;
-  place-items: center;
-  margin-bottom: 16px;
-  border-radius: 50%;
-  background: var(--forest);
-  color: #fff;
-  font-size: 1.75rem;
+    width: 88px;
+    height: 88px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 16px;
+    border-radius: 50%;
+    background: var(--avatar-background-color);
+    color: var(--avatar-text-color);
+    font-size: 1.75rem;
 }
 .profile-name {
   font-size: 1.4rem;
@@ -106,13 +90,13 @@
   transition: background 0.15s, color 0.15s;
 }
 .nav-item:hover {
-  background: #e9efe7;
+  background: var(--panel);
   color: var(--ink);
 }
 .nav-item.is-active {
-  background: #fff;
+  background: var(--surface);
   border-color: var(--border);
-  color: var(--forest);
+  color: var(--ink);
 }
 .nav-icon {
   display: grid;
@@ -131,7 +115,7 @@
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.15;
-  color: var(--forest);
+  color: var(--ink);
 }
 .settings-page h2 {
   margin: 0 0 20px;
@@ -186,7 +170,7 @@
   text-decoration: underline;
 }
 .text-link.is-danger {
-  color: #9a3f1f;
+  color: var(--rust);
 }
 .text-link:disabled {
   opacity: 0.6;
@@ -200,7 +184,7 @@
 
 .plant-error {
   margin: 0 0 12px;
-  color: #9a3f1f;
+  color: var(--rust);
 }
 
 /* Overview */
@@ -291,11 +275,11 @@
 }
 .plant-icon.is-fern {
   background: var(--peach);
-  color: #c4622f;
+  color: var(--rust);
 }
 .plant-icon.is-aloe {
   background: var(--butter);
-  color: #b8901c;
+  color: var(--green);
 }
 .plant-info {
   flex: 1;
@@ -336,14 +320,14 @@
   color: var(--rust);
 }
 .status-pill.is-needs-water::before {
-  background: #c4552f;
+  background: var(--rust);
 }
 .status-pill.is-offline {
-  background: #eef0ed;
+  background: var(--panel);
   color: var(--muted);
 }
 .status-pill.is-offline::before {
-  background: #9aa59e;
+  background: var(--faint);
 }
 
 .plant-footer {
@@ -370,7 +354,7 @@
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: #c7d0c9;
+  background: var(--faint);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -384,7 +368,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   transition: transform 0.15s;
 }
 .switch[aria-checked="true"] .switch-thumb {
@@ -437,7 +421,7 @@
   padding: 0 16px;
   border: 1.5px solid var(--border);
   border-radius: 14px;
-  background: #fff;
+  background: var(--surface);
   font: inherit;
   font-size: 1.05rem;
   color: var(--ink);
@@ -475,7 +459,7 @@
   font-size: 0.92rem;
 }
 .form-message.is-error {
-  background: #fbeae6;
+  background: var(--panel);
   color: var(--rust);
 }
 .form-note {
@@ -538,7 +522,7 @@
 .btn-primary {
   border: 0;
   background: var(--green);
-  color: #fff;
+  color: var(--surface);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--green-hover);
@@ -549,12 +533,12 @@
 }
 .btn-outline {
   border: 1.5px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
 }
 .btn-outline:hover {
-  border-color: #c3cfc6;
-  background: #f7faf7;
+  border-color: var(--faint);
+  background: var(--panel);
 }
 
 .settings-page a:focus-visible,

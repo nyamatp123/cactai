@@ -1,133 +1,125 @@
-// Shown when moisture is below the plant type's thirst line
-const NEEDS_WATER = { label: 'Needs water', bg: '#F8E3D8', arc: '#C4572F', track: '#F0CBB9' };
+// Shown when moisture is below the plant type's thirst line.
+// Colors live in CSS (StatCards.theme.css) keyed by `key`, so both themes work.
+const NEEDS_WATER = { key: 'needs-water', label: 'Needs water' };
 
 // Moisture bands for a cactus that isn't thirsty
 const MOISTURE_BANDS = [
-  { max: 40,  label: 'Healthy zone', bg: '#FEF9C3', arc: '#C9A217', track: '#EDE7A0' },
-  { max: 60,  label: 'Well watered', bg: '#DDE9D6', arc: '#3F7A55', track: '#B8D4BC' },
-  { max: 80,  label: 'Too wet',      bg: '#F5D0C8', arc: '#8B2E1F', track: '#E8B8B0' },
-  { max: 100, label: 'Overwatered',  bg: '#E8AFA3', arc: '#5C1409', track: '#D49088' },
+    { max: 40, key: 'healthy', label: 'Healthy zone' },
+    { max: 60, key: 'well', label: 'Well watered' },
+    { max: 80, key: 'wet', label: 'Too wet' },
+    { max: 100, key: 'over', label: 'Overwatered' },
 ];
 
 function getMoistureBand(pct, needsWater) {
-  if (pct == null) return null;
-  if (needsWater) return NEEDS_WATER;
-  return MOISTURE_BANDS.find(b => pct < b.max) ?? MOISTURE_BANDS[MOISTURE_BANDS.length - 1];
+    if (pct == null) return null;
+    if (needsWater) return NEEDS_WATER;
+    return MOISTURE_BANDS.find(b => pct < b.max) ?? MOISTURE_BANDS[MOISTURE_BANDS.length - 1];
 }
 
+function MoistureRing({ pct }) {
+    const R = 38;
+    const size = 100;
+    const cx = size / 2;
+    const cy = size / 2;
+    const circ = 2 * Math.PI * R;
+    const safePct = Math.min(100, Math.max(0, pct ?? 0));
+    const arc = (safePct / 100) * circ;
 
-function MoistureRing({ pct, arcColor, trackColor }) {
-  const R = 38;
-  const size = 100;
-  const cx = size / 2;
-  const cy = size / 2;
-  const circ = 2 * Math.PI * R;
-  const safePct = Math.min(100, Math.max(0, pct ?? 0));
-  const arc = (safePct / 100) * circ;
-
-  return (
-    <svg viewBox={`0 0 ${size} ${size}`} width="90" height="90" aria-hidden="true">
-      <circle cx={cx} cy={cy} r={R} fill="none" stroke={trackColor ?? '#F0CBB9'} strokeWidth="11" />
-      {safePct > 0 && (
-        <circle
-          cx={cx}
-          cy={cy}
-          r={R}
-          fill="none"
-          stroke={arcColor ?? '#C4572F'}
-          strokeWidth="11"
-          strokeLinecap="round"
-          strokeDasharray={`${arc} ${circ}`}
-          transform={`rotate(-90 ${cx} ${cy})`}
-        />
-      )}
-      <text
-        x={cx}
-        y={cy}
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontSize="18"
-        fontWeight="600"
-        fill="#1f3329"
-        fontFamily="system-ui, -apple-system, sans-serif"
-      >
-        {pct != null ? `${safePct}%` : '—'}
-      </text>
-    </svg>
-  );
+    return (
+        <svg viewBox={`0 0 ${size} ${size}`} width="90" height="90" aria-hidden="true">
+            <circle className="ring-track" cx={cx} cy={cy} r={R} fill="none" strokeWidth="11" />
+            {safePct > 0 && (
+                <circle
+                    className="ring-arc"
+                    cx={cx}
+                    cy={cy}
+                    r={R}
+                    fill="none"
+                    strokeWidth="11"
+                    strokeLinecap="round"
+                    strokeDasharray={`${arc} ${circ}`}
+                    transform={`rotate(-90 ${cx} ${cy})`}
+                />
+            )}
+            <text
+                className="ring-text"
+                x={cx}
+                y={cy}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize="18"
+                fontWeight="600"
+                fontFamily="system-ui, -apple-system, sans-serif"
+            >
+                {pct != null ? `${safePct}%` : '—'}
+            </text>
+        </svg>
+    );
 }
 
 function LightPill({ level }) {
-  return (
-    <span className="stat-light-pill">
-      {level}
-    </span>
-  );
+    return <span className="stat-light-pill">{level}</span>;
 }
 
 // TODO: wire onWaterNow to backend when available
 export default function StatCards({
-  current,
-  averages,
-  needsWater,
-  lightLevel,
-  avgLabel = 'Avg today',
-  onWaterNow,
+    current,
+    averages,
+    needsWater,
+    lightLevel,
+    avgLabel = 'Avg today',
+    onWaterNow,
 }) {
-  const moisture = current?.moisture ?? null;
-  const lux = current?.light ?? null;
-  const avgMoisture = averages?.moisture ?? null;
-  const avgLux = averages?.light ?? null;
+    const moisture = current?.moisture ?? null;
+    const lux = current?.light ?? null;
+    const avgMoisture = averages?.moisture ?? null;
+    const avgLux = averages?.light ?? null;
 
-  const band = getMoistureBand(moisture, needsWater);
+    const band = getMoistureBand(moisture, needsWater);
 
-  return (
-    <div className="stat-cards-row">
-      {/* Left: Soil moisture */}
-      <div className="stat-card stat-card--moisture" style={{ background: band?.bg ?? '#F4F4F4' }}>
-        <div className="stat-card-ring">
-          <MoistureRing
-            pct={moisture != null ? Math.round(moisture) : null}
-            arcColor={band?.arc}
-            trackColor={band?.track}
-          />
-        </div>
-        <div className="stat-card-body">
-          <span className="stat-card-label">Soil moisture</span>
-          <span className="stat-card-status">
-            {moisture == null ? '—' : band?.label}
-          </span>
-          {needsWater && (
-            <button className="stat-water-btn" onClick={onWaterNow} type="button">
-              Water now
-            </button>
-          )}
-        </div>
-      </div>
+    return (
+        <div className="stat-cards-row">
+            {/* Left: Soil moisture */}
+            <div className="stat-card stat-card--moisture" data-band={band?.key ?? 'empty'}>
+                <div className="stat-card-ring">
+                    <MoistureRing pct={moisture != null ? Math.round(moisture) : null} />
+                </div>
+                <div className="stat-card-body">
+                    <span className="stat-card-label">Soil moisture</span>
+                    <span className="stat-card-status">
+                        {moisture == null ? '—' : band?.label}
+                    </span>
+                    {needsWater && (
+                        <button className="stat-water-btn" onClick={onWaterNow} type="button">
+                            Water now
+                        </button>
+                    )}
+                </div>
+            </div>
 
-      {/* Right column */}
-      <div className="stat-cards-right">
-        {/* Light now */}
-        <div className="stat-card stat-card--light" style={{ background: '#F8EFC9' }}>
-          <div className="stat-card-light-top">
-            <span className="stat-card-label">Light now</span>
-            <LightPill level={lux == null ? '—' : lightLevel} />
-          </div>
-          <span className="stat-card-big-num">
-            {lux != null ? lux.toLocaleString() : '—'}
-          </span>
-        </div>
+            {/* Right column */}
+            <div className="stat-cards-right">
+                {/* Light now */}
+                <div className="stat-card stat-card--light">
+                    <div className="stat-card-light-top">
+                        <span className="stat-card-label">Light now</span>
+                        <LightPill level={lux == null ? '—' : lightLevel} />
+                    </div>
+                    <span className="stat-card-big-num">
+                        {lux != null ? lux.toLocaleString() : '—'}
+                    </span>
+                </div>
 
-        {/* Avg today */}
-        <div className="stat-card stat-card--avg" style={{ background: '#DDE9D6' }}>
-          <span className="stat-card-label">{avgLabel}</span>
-          <span className="stat-card-avg-text">
-            {avgMoisture != null ? `${avgMoisture}%` : '—'}
-            {' · '}
-            {avgLux != null ? avgLux.toLocaleString() : '—'}
-          </span>
+                {/* Avg today */}
+                <div className="stat-card stat-card--avg">
+                    <span className="stat-card-label">{avgLabel}</span>
+                    <span className="stat-card-avg-text">
+                        {avgMoisture != null ? `${avgMoisture}%` : '—'}
+                        {' · '}
+                        {avgLux != null ? avgLux.toLocaleString() : '—'}
+                    </span>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
