@@ -29,8 +29,11 @@ export function login({ email, password }) {
   return request("/login", { method: "POST", body: { email, password } });
 }
 
-export async function signup({ username, email, password }) {
-  await request("/users", { method: "POST", body: { username, email, password } });
+export async function signup({ firstName, lastName, username, email, password }) {
+  await request("/users", {
+    method: "POST",
+    body: { first_name: firstName, last_name: lastName, username, email, password },
+  });
   return login({ email, password });
 }
 

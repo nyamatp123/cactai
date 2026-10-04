@@ -11,6 +11,8 @@ export default function SettingsPage() {
   const [section, setSection] = useState("overview");
   const { user, plants, updateProfile, updateTheme, addPlant, updatePlant, removePlant, changePassword } = useSettings();
 
+  if (!user) return null; // loading
+
   return (
     <div className="settings-page">
       <div className="settings-card">

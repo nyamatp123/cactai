@@ -8,7 +8,6 @@ function pickDetails(user) {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
-    phone: user.phone,
   };
 }
 
@@ -33,7 +32,6 @@ function DetailsForm({ user, onSave }) {
       firstName: draft.firstName.trim(),
       lastName: draft.lastName.trim(),
       email: draft.email.trim(),
-      phone: draft.phone.trim(),
     };
 
     if (!details.firstName || !details.lastName) {
@@ -50,9 +48,8 @@ function DetailsForm({ user, onSave }) {
       await onSave(details);
       setDraft(details);
       setSaved(true);
-    } catch {
-      // TODO: map API errors to friendly messages.
-      setError("We couldn't save your changes. Try again.");
+    } catch (err) {
+      setError(err.message || "We couldn't save your changes. Try again.");
     } finally {
       setSaving(false);
     }
@@ -74,16 +71,8 @@ function DetailsForm({ user, onSave }) {
           <input id="email" name="email" type="email" autoComplete="email" value={draft.email} onChange={handleChange} />
         </div>
         <div className="form-field">
-          <label htmlFor="phone">Phone number (optional)</label>
-          <input
-            id="phone"
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            placeholder="+1 604 555 0123"
-            value={draft.phone}
-            onChange={handleChange}
-          />
+          <label htmlFor="username">Username (can't be changed)</label>
+          <input id="username" value={user.username} disabled readOnly />
         </div>
       </div>
 
@@ -142,9 +131,8 @@ function PasswordForm({ onSubmit, onCancel }) {
     setSaving(true);
     try {
       await onSubmit(values.current, values.next);
-    } catch {
-      // TODO: show "current password is wrong" when the API says so.
-      setError("We couldn't change your password. Try again.");
+    } catch (err) {
+      setError(err.message || "We couldn't change your password. Try again.");
       setSaving(false);
     }
   }

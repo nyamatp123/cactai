@@ -6,6 +6,8 @@ import { signup } from "../../api/auth";
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,6 +19,10 @@ export default function SignupPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    if (!firstName.trim() || !lastName.trim()) {
+      setError("Enter your first and last name.");
+      return;
+    }
     if (password !== confirm) {
       setError("Passwords don't match.");
       return;
@@ -24,7 +30,13 @@ export default function SignupPage() {
     // TODO: add email format and password strength rules
     setLoading(true);
     try {
-      await signup({ username, email, password });
+      await signup({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        username,
+        email,
+        password,
+      });
       navigate("/dashboard");
     } catch (err) {
       setError(err.message);
@@ -43,6 +55,28 @@ export default function SignupPage() {
           <p className="login__subtitle">Start tracking your plant's moisture and light.</p>
 
           <form className="login__form" onSubmit={handleSubmit} noValidate>
+            <label className="login__label" htmlFor="firstName">First name</label>
+            <input
+              id="firstName"
+              className="login__input"
+              type="text"
+              autoComplete="given-name"
+              placeholder="Your first name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+            />
+
+            <label className="login__label" htmlFor="lastName">Last name</label>
+            <input
+              id="lastName"
+              className="login__input"
+              type="text"
+              autoComplete="family-name"
+              placeholder="Your last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+            />
+
             <label className="login__label" htmlFor="username">Username</label>
             <input
               id="username"

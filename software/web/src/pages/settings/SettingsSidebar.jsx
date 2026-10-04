@@ -42,7 +42,10 @@ function formatMemberSince(dateString) {
 }
 
 export default function SettingsSidebar({ user, active, onSelect }) {
-  const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+  // Accounts made before names were collected fall back to the username
+  const fullName = `${user.firstName} ${user.lastName}`.trim() || user.username;
+  const initials =
+    (`${user.firstName.charAt(0)}${user.lastName.charAt(0)}` || user.username.charAt(0)).toUpperCase();
 
   return (
     <aside className="settings-sidebar">
@@ -55,7 +58,7 @@ export default function SettingsSidebar({ user, active, onSelect }) {
           {initials}
         </span>
         <p className="profile-name">
-          {user.firstName} {user.lastName}
+          {fullName}
         </p>
         <p className="profile-since">Member since {formatMemberSince(user.memberSince)}</p>
       </div>

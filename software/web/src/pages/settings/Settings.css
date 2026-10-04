@@ -447,6 +447,11 @@
 .settings-page input::placeholder {
   color: var(--faint);
 }
+.settings-page input:disabled {
+  background: var(--panel);
+  color: var(--muted);
+  cursor: not-allowed;
+}
 .settings-page input:focus,
 .theme-select:focus {
   border-color: var(--green);

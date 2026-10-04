@@ -45,23 +45,38 @@ def get_current_user_id(request: Request) -> int:
 # ---------- Users and auth ----------
 
 class NewUser(BaseModel):
+    first_name: str
+    last_name: str
     username: str
     email: str
     password: str
 
+USER_COLUMNS = "id, username, email, first_name, last_name, created_at"
+
+def user_row(r):
+    return {
+        "id": r[0], "username": r[1], "email": r[2],
+        "first_name": r[3], "last_name": r[4], "created_at": r[5],
+    }
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
 @app.post("/users", status_code=201)
 def create_user(user: NewUser):
-    password_hash = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
+    first_name, last_name = user.first_name.strip(), user.last_name.strip()
+    if not first_name or not last_name:
+        raise HTTPException(status_code=422, detail="Enter your first and last name")
     try:
         with get_connection() as conn:
             row = conn.execute(
-                "INSERT INTO users (username, email, password_hash) "
-                "VALUES (%s, %s, %s) RETURNING id, username, email, created_at",
-                (user.username, user.email, password_hash),
+                "INSERT INTO users (username, email, password_hash, first_name, last_name) "
+                f"VALUES (%s, %s, %s, %s, %s) RETURNING {USER_COLUMNS}",
+                (user.username, user.email, hash_password(user.password), first_name, last_name),
             ).fetchone()
     except psycopg.errors.UniqueViolation:
         raise HTTPException(status_code=409, detail="Username or email already taken")
-    return {"id": row[0], "username": row[1], "email": row[2], "created_at": row[3]}
+    return user_row(row)
 
 class LoginData(BaseModel):
     email: str
@@ -102,11 +117,60 @@ def logout(response: Response):
 def me(user_id: int = Depends(get_current_user_id)):
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT id, username, email FROM users WHERE id = %s", (user_id,)
+            f"SELECT {USER_COLUMNS} FROM users WHERE id = %s", (user_id,)
         ).fetchone()
     if row is None:
         raise HTTPException(status_code=401, detail="User not found")
-    return {"id": row[0], "username": row[1], "email": row[2]}
+    return user_row(row)
+
+class ProfileChanges(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+
+# Username can't be changed here on purpose
+@app.patch("/me")
+def update_me(changes: ProfileChanges, user_id: int = Depends(get_current_user_id)):
+    first_name, last_name = changes.first_name.strip(), changes.last_name.strip()
+    email = changes.email.strip()
+    if not first_name or not last_name:
+        raise HTTPException(status_code=422, detail="Enter your first and last name")
+    if "@" not in email:
+        raise HTTPException(status_code=422, detail="Enter a valid email address")
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "UPDATE users SET first_name = %s, last_name = %s, email = %s "
+                f"WHERE id = %s RETURNING {USER_COLUMNS}",
+                (first_name, last_name, email, user_id),
+            ).fetchone()
+    except psycopg.errors.UniqueViolation:
+        raise HTTPException(status_code=409, detail="That email is already used by another account")
+    if row is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user_row(row)
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+@app.post("/me/password")
+def change_password(data: PasswordChange, user_id: int = Depends(get_current_user_id)):
+    if len(data.new_password) < 8:
+        raise HTTPException(status_code=422, detail="Your new password needs at least 8 characters")
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT password_hash FROM users WHERE id = %s", (user_id,)
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=401, detail="User not found")
+        if not bcrypt.checkpw(data.current_password.encode(), row[0].encode()):
+            raise HTTPException(status_code=400, detail="Your current password is incorrect")
+        conn.execute(
+            "UPDATE users SET password_hash = %s WHERE id = %s",
+            (hash_password(data.new_password), user_id),
+        )
+    return {"ok": True}
 
 
 # ---------- Plants (logged-in user only) ----------
