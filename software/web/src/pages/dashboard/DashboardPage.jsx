@@ -68,7 +68,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="dashboard-page">
+    <div className={`dashboard-page${isChatOpen ? ' chat-open' : ''}`}>
       <Sidebar
         plants={plants}
         selectedId={selectedId}

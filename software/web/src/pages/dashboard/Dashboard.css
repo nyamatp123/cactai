@@ -386,6 +386,11 @@
   padding: 102px 16px 16px 0;
   height: 100vh;
   overflow-y: auto;
+  transition: flex-basis 0.5s cubic-bezier(.4,0,.2,1);
+}
+
+.dashboard-page.chat-open .plant-panel {
+  flex-basis: 460px;
 }
 
 .pp-card {
@@ -614,13 +619,14 @@
 }
 
 .plant-panel.chat-open .pp-chat-wrapper {
-  max-height: calc(100vh - 130px);
+  max-height: calc(100vh - 120px);
   opacity: 1;
 }
 
 /* ---------- Reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
+  .plant-panel,
   .pp-plant-expanded,
   .pp-plant-compact,
   .pp-foldable,
@@ -634,7 +640,7 @@
 .cactai-chat {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 150px);
+  height: calc(100vh - 140px);
   min-height: 380px;
   background: #fff;
   border-radius: 16px;
