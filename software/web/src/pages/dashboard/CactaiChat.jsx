@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { askCactai } from '../../api/cactai';
+import { THIRST_LINE, lightLabel } from './plantStatus';
 
 function SparkleIcon() {
   return (
@@ -24,6 +25,31 @@ function TypingDots() {
       <span className="chat-dot" style={{ animationDelay: '160ms' }} />
       <span className="chat-dot" style={{ animationDelay: '320ms' }} />
     </div>
+  );
+}
+
+function moistureLabel(m) {
+  if (m < THIRST_LINE) return 'mostly dry';
+  if (m < 40) return 'comfortable';
+  if (m < 60) return 'a bit wet';
+  return 'too wet';
+}
+
+// Readings card shown under replies about the plant's condition
+function StatsCard({ stats }) {
+  const rows = [];
+  if (stats.moisture != null) rows.push(['Moisture', `${stats.moisture}% · ${moistureLabel(stats.moisture)}`]);
+  if (stats.lux != null) rows.push(['Light', `${stats.lux} · ${lightLabel(stats.lux).toLowerCase()}`]);
+  if (!rows.length) return null;
+  return (
+    <dl className="chat-stats">
+      {rows.map(([label, value]) => (
+        <div key={label} className="chat-stats-row">
+          <dt>{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -66,8 +92,15 @@ export default function CactaiChat({ plant, readings, messages, onAddMessage }) 
     setErrorRetry(null);
     try {
       const history = messages.map(m => ({ role: m.role, text: m.text }));
-      const reply = await askCactai({ question, plant, readings, history });
-      onAddMessage({ role: 'cactai', text: reply });
+      // On retry the question is already the last message; don't send it twice
+      const last = history[history.length - 1];
+      if (last?.role === 'user' && last.text === question) history.pop();
+      const { reply, showStats } = await askCactai({ question, plant, readings, history });
+      // Snapshot the readings so old cards don't change when new data arrives
+      const stats = showStats
+        ? { moisture: readings?.latestMoisture ?? null, lux: readings?.latestLux ?? null }
+        : null;
+      onAddMessage({ role: 'cactai', text: reply, stats });
     } catch {
       setErrorRetry(question);
     } finally {
@@ -112,8 +145,9 @@ export default function CactaiChat({ plant, readings, messages, onAddMessage }) 
       >
         {displayMessages.map((msg, i) => (
           <div key={msg.id ?? i} className={`chat-row chat-row--${msg.role}`}>
-            <div className={`chat-bubble chat-bubble--${msg.role}`} style={{ whiteSpace: 'pre-wrap' }}>
-              {msg.text}
+            <div className={`chat-bubble chat-bubble--${msg.role}`}>
+              <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+              {msg.stats && <StatsCard stats={msg.stats} />}
             </div>
           </div>
         ))}
@@ -150,27 +184,29 @@ export default function CactaiChat({ plant, readings, messages, onAddMessage }) 
       )}
 
       <div className="chat-input-row">
-        <textarea
-          ref={textareaRef}
-          className="chat-textarea"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask Cactai about your cactus"
-          aria-label="Ask Cactai about your cactus"
-          maxLength={500}
-          rows={1}
-          disabled={isPending}
-        />
-        <button
-          type="button"
-          className="chat-send-btn"
-          onClick={() => send(input)}
-          disabled={!input.trim() || isPending}
-          aria-label="Send"
-        >
-          <SendIcon />
-        </button>
+        <div className="chat-input-pill">
+          <textarea
+            ref={textareaRef}
+            className="chat-textarea"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask about your cactus"
+            aria-label="Ask Cactai about your cactus"
+            maxLength={500}
+            rows={1}
+            disabled={isPending}
+          />
+          <button
+            type="button"
+            className="chat-send-btn"
+            onClick={() => send(input)}
+            disabled={!input.trim() || isPending}
+            aria-label="Send"
+          >
+            <SendIcon />
+          </button>
+        </div>
       </div>
     </div>
   );

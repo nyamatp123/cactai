@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+import { API_URL } from "./client";
+
 const TOKEN_KEY = "cactai_token";
 
 async function request(path, body) {

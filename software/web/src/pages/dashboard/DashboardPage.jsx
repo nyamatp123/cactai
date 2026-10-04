@@ -48,14 +48,15 @@ export default function DashboardPage() {
   const selected = plants.find((p) => p.id === selectedId);
   const statReadings = useMemo(() => getStatReadings(), []);
 
-  const chatMessages = chatHistory.get(selectedId) ?? [];
+  // Chat still works before any plant is added
+  const chatKey = selectedId ?? '__no-plant__';
+  const chatMessages = chatHistory.get(chatKey) ?? [];
 
   function handleAddMessage(msg) {
-    if (!selectedId) return;
     setChatHistory(prev => {
       const next = new Map(prev);
-      const existing = next.get(selectedId) ?? [];
-      next.set(selectedId, [...existing, { ...msg, id: crypto.randomUUID() }]);
+      const existing = next.get(chatKey) ?? [];
+      next.set(chatKey, [...existing, { ...msg, id: crypto.randomUUID() }]);
       return next;
     });
   }

@@ -1,8 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Any
 import psycopg
 from db import get_connection
+from ai_insights import get_chat_reply
 import bcrypt
 import os
 from datetime import datetime, timedelta, timezone
@@ -94,3 +96,19 @@ def login(data: LoginData):
         algorithm="HS256",
     )
     return {"access_token": token, "token_type": "bearer"}
+
+
+class ChatTurn(BaseModel):
+    role: str  # "user" or "cactai"
+    text: str
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+    history: list[ChatTurn] = []
+    context: dict[str, Any] | None = None
+
+# Plain def: the Gemini call blocks, so FastAPI runs this in a threadpool
+@app.post("/chat")
+def chat(req: ChatRequest):
+    history = [turn.model_dump() for turn in req.history]
+    return get_chat_reply(req.message, history, req.context)
