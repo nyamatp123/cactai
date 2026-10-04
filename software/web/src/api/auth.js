@@ -40,3 +40,50 @@ export function getToken() {
 export function logout() {
   localStorage.removeItem(TOKEN_KEY);
 }
+
+export function isLoggedIn() {
+    const token = getToken();
+    if (!token) return false;
+    try {
+        const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+        const payload = JSON.parse(atob(base64));
+        if (payload.exp * 1000 < Date.now()) {
+            logout(); // token expired
+            return false;
+        }
+        return true;
+    } catch {
+        logout(); // malformed token
+        return false;
+    }
+}
+
+// Use this for every call that needs a logged-in user
+export async function authRequest(path, { method = "GET", body } = {}) {
+    let res;
+    try {
+        res = await fetch(`${API_URL}${path}`, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getToken()}`,
+            },
+            body: body ? JSON.stringify(body) : undefined,
+        });
+    } catch {
+        throw new Error("Can't reach the server. Check that the backend is running.");
+    }
+
+    if (res.status === 401) {
+        logout();
+        window.location.assign("/login");
+        throw new Error("Session expired. Please log in again.");
+    }
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const detail = Array.isArray(data.detail) ? data.detail[0]?.msg : data.detail;
+        throw new Error(detail || `Request failed (${res.status})`);
+    }
+    return data;
+}
