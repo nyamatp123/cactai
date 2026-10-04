@@ -25,6 +25,7 @@ export const MOISTURE_RANGES_BY_TYPE = {
   'christmas cactus': { moistureMin: 30, moistureMax: 65 },
   'saguaro': { moistureMin: 10, moistureMax: 35 },
   'pincushion cactus': { moistureMin: 10, moistureMax: 35 },
+  'elephant cactus': { moistureMin: 10, moistureMax: 35 },
   'not sure': { moistureMin: 10, moistureMax: 35 },
 };
 

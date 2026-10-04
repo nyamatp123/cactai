@@ -1,13 +1,13 @@
 # Cactai Cactus Knowledge Base
 
 Last compiled: 2026-10-03
-Purpose: an offline reference that the Cactai assistant (Gemini) reads instead of searching the web. It covers the 10 plant types offered in the Add Plant dropdown.
+Purpose: an offline reference that the Cactai assistant (Gemini) reads instead of searching the web. It covers the 11 plant types offered in the Add Plant dropdown.
 
 ---
 
 ## 0. How the assistant should use this file
 
-1. Match the user's plant `type` (case-insensitive) to one entry in section 3. The headings use the same names as the dropdown. If the type is "Not sure" or does not match anything, use entry 3.10 and the general rules in section 5.
+1. Match the user's plant `type` (case-insensitive) to one entry in section 3. The headings use the same names as the dropdown. If the type is "Not sure" or does not match anything, use entry 3.11 and the general rules in section 5.
 2. Use only the sensor numbers provided in the request. Never invent readings.
 3. Answer in 2 to 4 short sentences, plain language, no markdown, unless the user asks for detail.
 4. Compare the reading to the plant's own entry, not to a generic cactus. Two entries (Christmas cactus and Moon cactus) behave very differently from a desert cactus.
@@ -44,6 +44,7 @@ These are heuristic defaults chosen by Cactai to match the care guidance below. 
 | Bunny ears cactus | 10% | 40% | Bright |
 | Moon cactus | 8% | 30% | Medium to Bright (not harsh direct sun) |
 | Old man cactus | 8% | 35% | Bright |
+| Elephant cactus | 8% | 35% | Bright |
 | Christmas cactus | 30% | 65% | Medium to Bright (indirect) |
 | Saguaro | 10% | 35% | Bright |
 | Pincushion cactus | 10% | 35% | Bright (shield from harsh summer sun) |
@@ -65,6 +66,7 @@ Cactai "thrives at home" rating (1 = difficult, 5 = very easy) is a summary judg
 | Bunny ears cactus | Opuntia microdasys | Desert | Bright, mostly direct | Soak, then dry fully | Slow to moderate | 4/5 |
 | Moon cactus | Gymnocalycium mihanovichii (grafted) | Grafted desert | Bright but not harsh | Sparingly | Slow | 2/5 |
 | Old man cactus | Cephalocereus senilis | Desert | Bright, direct | Light and infrequent | Very slow | 3/5 |
+| Elephant cactus | Pachycereus pringlei | Desert | Full sun, 6 to 8 h direct | Soak, then dry fully | Slow indoors | 3/5 |
 | Christmas cactus | Schlumbergera | Rainforest | Bright indirect | Slightly moist | Moderate | 4/5 |
 | Saguaro | Carnegiea gigantea | Desert | Very bright | Moderate in growth, sparse in winter | Extremely slow | 2/5 |
 | Pincushion cactus | Mammillaria species | Desert | Bright, avoid harsh summer sun | Soak, then dry fully | Slow | 5/5 |
@@ -355,7 +357,7 @@ Cactai "thrives at home" rating (1 = difficult, 5 = very easy) is a summary judg
 **Warning signs**
 - *Rot:* soft, discoloured base. *Etiolation:* thin, pale growth from low light.
 
-**Notes:** Wild saguaros are protected, so buy only nursery-grown plants. Growing one indoors long-term can be difficult.
+**Notes:** Wild saguaros are protected, so buy only nursery-grown plants. Growing one indoors long-term can be difficult. Young saguaros are sometimes confused with the elephant cactus (see 3.10), which is more heavily branched and has fewer ribs.
 
 **Fit for a home setup:** Possible for a young plant with excellent light, but it is slow and demanding. Set expectations of very little visible growth.
 
@@ -394,12 +396,66 @@ Cactai "thrives at home" rating (1 = difficult, 5 = very easy) is a summary judg
 
 ---
 
-### 3.10 Not sure
+### 3.10 Elephant cactus
+
+- **Slug:** `elephant-cactus`
+- **Scientific name:** *Pachycereus pringlei*
+- **Other names:** Mexican giant cardon, cardón, Mexican giant cactus, column cactus. Some retailers sell small plants under names like "Mexican cactus" or "wooly cactus".
+- **Origin:** Sonoran Desert in north-western Mexico (Baja California and Sonora).
+- **Not the same as elephant bush:** The elephant bush (*Portulacaria afra*) is a leafy, tree-like succulent with different care. If the user describes small round leaves on woody stems, it is not this cactus.
+- **Sometimes confused with saguaro (3.8):** It looks similar but is more heavily branched near the base and has fewer ribs.
+- **About the "indoor version":** The elephant cactus houseplant is the same species as the giant desert cactus, just sold as a young potted plant. In the wild it is the tallest cactus in the world (recorded at over 19 m), with a trunk thick enough to resemble an elephant's leg, which is where the name comes from. Indoors it stays a manageable size for years but will eventually outgrow most rooms.
+- **Appearance when young:** A grey-green to blue-green column with deep ribs, woolly areoles, and strong grey spines.
+
+**Light**
+- Needs full sun. Guidance ranges from at least 4 to 6 hours of direct sun a day up to 6 to 8 hours. A south-facing window is ideal, and a grow light in winter helps.
+- With too little light it can survive but grows slower and unevenly (for example, thick and thin sections or a pointed top). Very dark conditions can make it overly lush and green, which makes it more prone to rot.
+- It leans toward the strongest light and can grow crooked, so rotate the pot regularly.
+- Dashboard target: **Bright**.
+
+**Water**
+- Use the "soak and dry" method: water thoroughly, then let the soil dry out completely from top to bottom before watering again. Use room-temperature water.
+- Sources disagree a lot on frequency:
+  - Some suggest about weekly in spring and summer once the soil is fully dry, then every 2 to 3 weeks in autumn and about once a month or less in winter.
+  - A houseplant care guide suggests about once a month in spring and summer and once every 2 months in winter.
+  - The safe summary: it needs little water, so water only when the soil is completely dry, and cut back sharply in autumn and winter.
+- For a newly bought or freshly repotted plant, one guide says to wait 4 to 6 weeks before the first watering. Other cactus guidance says several days. Waiting longer is the safer choice.
+- Overwatering is the surest way to damage it. Yellowing is often linked to too much water or too little light.
+
+**Soil and pot**
+- Cactus mix with extra sand, perlite or pumice, or roughly half compost and half grit.
+- Plant at the same depth as before, because burying the green stem can cause rot.
+- Choose a deep pot with drainage holes to support upright growth, and a heavy one so the plant does not tip. Do not overpot, since it likes to be a little root-bound.
+- Repot young plants about every 3 years, and older ones can stay in the same pot up to about 5 years. Repot in spring and go up only a little in pot size.
+
+**Temperature and humidity**
+- Handles big day and night temperature swings. Keep winter temperatures above about 5 °C (some guides allow 3 to 5 °C). Dry air is fine.
+
+**Feeding**
+- Optional. Guidance varies from a low-nitrogen cactus feed every 4 to 6 weeks in spring and summer to just once a year. Stop feeding from late September, because late feeding causes soft, lush growth that is risky in dark, cold months.
+
+**Growth and flowering**
+- Slow indoors. Outdoors in full sun and heat it can grow much faster (30 to 60 cm a year in ideal conditions according to one grower). Do not expect quick changes in a pot.
+- Flowers appear only on adult plants (large white night-blooming flowers in spring), so they are very unlikely indoors.
+
+**Warning signs**
+- *Yellowing:* overwatering or low light.
+- *Soft, dark base:* rot from too much water.
+- *Pale, thin, stretched growth, or uneven thickness:* not enough light, or very uneven watering.
+- *Crooked growth:* leaning toward one light source. Rotate it.
+
+**Safety:** Not chemically toxic, but the spines are sharp and can injure. Handle it with kitchen tongs or a thick folded towel, and keep it away from pets.
+
+**Fit for a home setup:** Works well if you have a very sunny window or a grow light and can handle slow growth. It is a good statement plant, but it needs light and space.
+
+---
+
+### 3.11 Not sure
 
 - **Slug:** `not-sure`
 - Use this entry when the user does not know the cactus type. Give safe, general desert-cactus advice and gently help them identify it.
 
-**Helpful questions to ask (one at a time):** Is it round and ribbed, tall and column-like, made of flat pads, or small and bumpy? Does it have long spines, short hairs, or white fuzz? Is the top brightly coloured? Are the stems flat and jointed like leaves (this suggests a Christmas cactus, which is cared for differently)?
+**Helpful questions to ask (one at a time):** Is it round and ribbed, tall and column-like, made of flat pads, or small and bumpy? Does it have long spines, short hairs, or white fuzz? Is the top brightly coloured? Are the stems flat and jointed like leaves (this suggests a Christmas cactus, which is cared for differently)? Is it a thick, deeply ribbed grey-green column (this could be an elephant cactus, see 3.10, or a young saguaro, see 3.8)?
 
 **Safe defaults for an unknown desert-type cactus**
 - Give the brightest light available. At least about 4 hours of bright direct light a day is a common minimum.
@@ -473,6 +529,7 @@ The facts above were paraphrased from these types of reference pages (retrieved 
 - Christmas cactus: Sprout Home care sheet, SOLTECH, Be.green, Horticulture Magazine, University of Minnesota Extension
 - Saguaro: Love the Garden, Arizona-Sonora Desert Museum care sheet, Harvest to Table, Hunker, Healthy Houseplants
 - Pincushion (*Mammillaria*): World of Succulents, Gardener's Path, Nature and Garden, University of Minnesota Extension, Missouri Botanical Garden
+- Elephant cactus (*Pachycereus pringlei*): Gardening Know How, Foliage Factory, Sprouts of Bristol, Gardener's Dream, Monster Gardens, Jardinería On, Giromagi, Max Vandaag, Cactus Art, GardenTags
 - General: New York Botanical Garden indoor cacti guide, Missouri Botanical Garden cacti and succulents fact sheet, Clemson HGIC
 
 The suggested sensor thresholds in section 1, the "thrives at home" ratings in section 2, and the winter and seasonal summaries are Cactai's own summaries and defaults, not direct quotes from these sources.
