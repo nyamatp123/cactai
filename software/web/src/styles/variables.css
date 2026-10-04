@@ -1,0 +1,96 @@
+:root {
+    color-scheme: light;
+    /* surfaces */
+    --panel: #f4f7f2; /* page background */
+    --surface: #ffffff; /* cards, inputs, modals, chat */
+    --surface-2: #e8ede9; /* toggle track, hover fills, offline pill */
+    /* text and lines */
+    --ink: #1f3329;
+    --muted: #5e7266;
+    --faint: #8a9a90;
+    --border: #dfe6e0;
+    --border-strong: #c6d3bf;
+    /* brand (the sidebar stays dark green in both themes) */
+    --forest: #253a31;
+    --forest-light: #32503f;
+    --on-forest: #ffffff; /* text/icons that sit on --forest */
+    --green: #2f6b4a;
+    --green-hover: #265a3d;
+    --dash-button-color: #ffffff;
+    --dash-button-hover-color: #32503f;
+    --avatar-background-color: #0f1512;
+    --avatar-text-color: #ffffff;
+    /* dark pill buttons: Water now, Send, View details, Done */
+    --btn-bg: #3a5f4a;
+    --btn-bg-hover: #32503f;
+    --btn-text: #ffffff;
+    /* status colors */
+    --mint: #e3eee6;
+    --sage: #dde8d9;
+    --peach: #fbe7dd;
+    --peach-border: #f1c9bd;
+    --peach-hover: #f7d3c8;
+    --butter: #f6edc6;
+    --butter-ink: #412402; /* text on --butter */
+    --butter-muted: #7a6a25; /* secondary text on --butter */
+    --rust: #8c2f1d;
+    --danger: #c0392b;
+    --shadow: rgba(0, 0, 0, 0.12);
+    /* chart */
+    --chart-line: #3F7A55;
+    --chart-fill: #E6EFDD;
+    --chart-history-line: #9DB8A6;
+    --chart-history-fill: #F1F5EC;
+    --chart-thirst: #C4572F;
+    /* light chart */
+    --chart-light: #E2BE48;
+    --chart-light-history: #F0D888;
+    --chart-light-history-faded: #F7EDC6;
+    --chart-cursor: rgba(63, 122, 85, 0.06);
+}
+
+[data-theme="dark"] {
+    color-scheme: dark;
+    --panel: #0f1512;
+    --surface: #18211c;
+    --surface-2: #232f28;
+    --ink: #e6efe8;
+    --muted: #a3b3a8;
+    --faint: #7d8f83;
+    --border: #2a362f;
+    --border-strong: #3a4a40;
+    --forest: #18211c;
+    --forest-light: #243329;
+    --on-forest: #ffffff;
+    --green: #5fbf85;
+    --green-hover: #7ccf9d;
+    --dash-button-color: #ffffff;
+    --dash-button-hover-color: #32503f;
+    --avatar-background-color: #a2d0b4;
+    --avatar-text-color: #0f1512;
+    --btn-bg: #2e4136;
+    --btn-bg-hover: #7ccf9d;
+    --btn-text: #0f1512;
+    --mint: #1f3a2b;
+    --sage: #262d29;
+    --peach: #3d2a22;
+    --peach-border: #5a3a2f;
+    --peach-hover: #4c332a;
+    --butter: #251B19;
+    --butter-ink: #f0dc8a;
+    --butter-muted: #cdb860;
+    --rust: #f2a58f;
+    --danger: #ff7b6b;
+    --shadow: rgba(0, 0, 0, 0.5);
+    /* chart */
+    --chart-line: #5fbf85;
+    --chart-fill: #1f3a2b;
+    --chart-history-line: #4a6a56;
+    --chart-history-fill: #182720;
+    --chart-thirst: #f2a58f;
+    /* light chart */
+    --chart-light: #a59d47;
+    --chart-light-history: #8f7a2c;
+    --chart-light-history-faded: #3b3417;
+    --chart-cursor: rgba(95, 191, 133, 0.10);
+}
