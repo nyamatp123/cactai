@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { listPlants, createPlant } from "../../api/plants";
+import { getAccount } from "../../api/settings";
 import Sidebar from "./Sidebar";
 import StatCards from "./StatCards";
 import MoistureChart from "./MoistureChart";
@@ -43,6 +44,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [plants, setPlants] = useState(null); // null while loading
   const [loadError, setLoadError] = useState("");
+  const [firstName, setFirstName] = useState(null); // null while loading
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [timeRange, setTimeRange] = useState('day');
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -50,6 +52,9 @@ export default function DashboardPage() {
   const [chatHistory, setChatHistory] = useState(() => new Map());
 
   useEffect(() => {
+    getAccount()
+      .then((account) => setFirstName(account.firstName))
+      .catch(() => setFirstName("")); // greeting falls back to "Hi there"
     listPlants()
       .then(setPlants)
       .catch((err) => setLoadError(err.message));
@@ -97,7 +102,7 @@ export default function DashboardPage() {
       <main className="dash-main">
         <div className="dash-header">
           <div className="dash-greeting">
-            <h1>Hi, {selected.name}</h1>
+            <h1>{firstName === null ? 'Hi' : firstName ? `Hi, ${firstName}` : 'Hi there'}</h1>
             <p>Updated just now</p>
           </div>
           <TimeRangeToggle value={timeRange} onChange={setTimeRange} />

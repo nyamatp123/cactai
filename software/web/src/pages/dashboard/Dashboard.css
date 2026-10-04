@@ -411,6 +411,12 @@
   color: #1f3329;
 }
 
+.pp-plant-type {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #8a9a90;
+}
+
 .pp-plant-mood {
   margin: 4px 0 0;
   font-size: 12px;

@@ -71,6 +71,9 @@ export default function PlantPanel({
     return 'Your plant is drowning, try draining some water please';
   }
   const mood = moodLine(moisture);
+  // "Not sure" counts as no type chosen
+  const plantType = plant?.type?.trim();
+  const showType = plantType && plantType.toLowerCase() !== 'not sure';
 
   return (
     <aside className={`plant-panel${isChatOpen ? ' chat-open' : ''}`}>
@@ -80,6 +83,7 @@ export default function PlantPanel({
         <div className="pp-plant-expanded">
           <CactusSVG />
           <p className="pp-plant-name">{plant?.name ?? 'Your plant'}</p>
+          {showType && <p className="pp-plant-type">{plantType}</p>}
           <p className="pp-plant-mood">{mood}</p>
         </div>
 
